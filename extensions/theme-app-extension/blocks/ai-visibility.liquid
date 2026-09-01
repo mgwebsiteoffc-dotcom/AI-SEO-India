@@ -1,0 +1,16 @@
+{% comment %}
+  AI Visibility — schema + llms.txt link injection
+  Loads on every page; the script decides what to inject based on URL path.
+  App proxy base: https://{{ shop.domain }}/apps/ai-visibility
+{% endcomment %}
+<script>
+  window.AIVisibility = {
+    shop: {{ shop.domain | json }},
+    proxyBase: 'https://{{ shop.domain }}/apps/ai-visibility',
+    path: {{ request.path | json }}
+  };
+</script>
+{{ 'ai-visibility.js' | asset_url | script_tag }}
+{% comment %}Tell AI engines + agentic browsers where the machine-readable index lives{% endcomment %}
+<link rel="llms.txt" href="https://{{ shop.domain }}/apps/ai-visibility/llms.txt">
+<link rel="alternate" type="text/plain" title="llms.txt" href="https://{{ shop.domain }}/apps/ai-visibility/llms.txt">

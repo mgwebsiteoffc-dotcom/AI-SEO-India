@@ -1,0 +1,8 @@
+# Theme App Extension — injects AI Visibility JSON-LD + llms.txt link on the storefront
+name = "AI Visibility"
+handle = "ai-visibility"
+
+[[extensions]]
+type = "theme"
+name = "AI Visibility"
+handle = "ai-visibility"
