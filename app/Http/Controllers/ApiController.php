@@ -252,6 +252,7 @@ class ApiController extends Controller
             'enabled' => (bool) ($settings['llms_enabled'] ?? false),
             'entries' => $store->llmsEntries()->orderBy('position')->limit(200)->get(['id', 'kind', 'title', 'path', 'description']),
             'proxy_url' => config('shopify.proxy_prefix') ? "https://{$store->shop}/".config('shopify.proxy_prefix').'/llms.txt' : null,
+            'agent_url' => config('shopify.proxy_prefix') ? "https://{$store->shop}/".config('shopify.proxy_prefix').'/agent.md' : null,
         ]);
     }
 

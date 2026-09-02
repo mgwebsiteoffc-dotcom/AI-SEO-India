@@ -31,6 +31,15 @@
     </div>
 
     <div class="stat-card">
+      <div class="text-sm font-bold text-slate-900 mb-1">agent.md — AI-agent manual</div>
+      <div class="text-xs text-slate-500 mb-3">
+        A storefront "operating manual" for AI agents and agentic browsers at
+        <code class="bg-slate-100 px-1 rounded">{{ agentUrl || '…/agent.md' }}</code> — what you sell, key pages, schema and support contact.
+      </div>
+      <pre class="bg-slate-900 text-slate-100 text-xs rounded-xl p-4 overflow-auto max-h-64 leading-relaxed">{{ agent || '…' }}</pre>
+    </div>
+
+    <div class="stat-card">
       <div class="text-sm font-bold text-slate-900 mb-2">robots.txt advisory — allow AI crawlers</div>
       <pre class="bg-slate-900 text-slate-100 text-xs rounded-xl p-4 overflow-auto max-h-64 leading-relaxed">{{ robots || '…' }}</pre>
     </div>
@@ -44,8 +53,10 @@ import { api } from '../api';
 const enabled = ref(false);
 const entries = ref([]);
 const proxyUrl = ref('');
+const agentUrl = ref('');
 const content = ref('');
 const robots = ref('');
+const agent = ref('');
 const busy = ref(false);
 
 async function load() {
@@ -53,9 +64,16 @@ async function load() {
     enabled.value = d.enabled;
     entries.value = d.entries || [];
     proxyUrl.value = d.proxy_url || '';
+    agentUrl.value = d.agent_url || '';
     if (!content.value) {
         content.value = entries.value.map((e) => `- [${e.title}](https://${e.path})`).join('\n');
     }
+}
+
+async function fetchProxyFile(path) {
+    const url = '/apps/ai-visibility/' + path + (window.demoMode ? '?demo=1' : '');
+    const r = await fetch(url, { headers: { Accept: 'text/plain' } });
+    return r.ok ? r.text() : null;
 }
 
 async function generate() {
@@ -64,6 +82,9 @@ async function generate() {
         const d = await api.post('/api/llms/generate');
         content.value = d.content;
         await load();
+        try {
+            agent.value = (await fetchProxyFile('agent.md')) || '';
+        } catch (e) { /* preview optional */ }
     } catch (e) {
         alert(e.message);
     } finally {
@@ -79,8 +100,10 @@ async function toggle() {
 onMounted(async () => {
     try {
         await load();
-        const r = await fetch('/apps/ai-visibility/robots.txt' + (window.demoMode ? '?demo=1' : ''), { headers: { Accept: 'text/plain' } });
-        robots.value = await r.text();
+        robots.value = (await fetchProxyFile('robots.txt')) || '';
+    } catch (e) { /* proxy not resolvable in preview */ }
+    try {
+        agent.value = (await fetchProxyFile('agent.md')) || '';
     } catch (e) { /* proxy not resolvable in preview */ }
 });
 </script>

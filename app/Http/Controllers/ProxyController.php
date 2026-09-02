@@ -37,6 +37,23 @@ class ProxyController extends Controller
         ]);
     }
 
+    /** GET .../agent.md → AI-agent manual for the store */
+    public function agentMd(Request $request)
+    {
+        $store = $this->store($request);
+        if (! $store) {
+            return response('Not found', 404);
+        }
+        // Refresh first (same persistence rules as llms.txt) so agents always
+        // see the latest catalog.
+        app(LlmsGenerator::class)->generate($store, persist: true);
+        $content = app(LlmsGenerator::class)->agentMd($store);
+        return response($content, 200, [
+            'Content-Type' => 'text/markdown; charset=utf-8',
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
+    }
+
     /** GET .../robots.txt → advisory AI-crawler rules (view this from the app UI) */
     public function robotsTxt(Request $request)
     {

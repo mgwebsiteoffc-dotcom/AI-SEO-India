@@ -69,6 +69,7 @@ Route::post('/webhooks/{topic}', [WebhookController::class, 'handle'])->where('t
 // App Proxy (signed by Shopify, served on the store's own domain)
 Route::prefix('apps/ai-visibility')->middleware(VerifyProxyRequest::class)->group(function () {
     Route::get('/llms.txt', [ProxyController::class, 'llmsTxt']);
+    Route::get('/agent.md', [ProxyController::class, 'agentMd']);
     Route::get('/robots.txt', [ProxyController::class, 'robotsTxt']);
     Route::get('/sitemap.xml', [ProxyController::class, 'sitemapXml']);
     Route::get('/schema', [ProxyController::class, 'schema']);
