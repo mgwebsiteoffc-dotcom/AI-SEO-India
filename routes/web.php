@@ -24,6 +24,7 @@ Route::get('/auth/demo', [AuthController::class, 'demo'])->name('auth.demo');
 Route::get('/', [MarketingController::class, 'home'])->name('home');
 Route::get('/pricing', [MarketingController::class, 'pricing'])->name('pricing');
 Route::get('/scorecard', [MarketingController::class, 'scorecard'])->name('scorecard');
+Route::get('/scorecard/{token}', [MarketingController::class, 'scorecardShare'])->name('scorecard.share');
 Route::post('/scorecard/run', [MarketingController::class, 'runScorecard'])->name('scorecard.run');
 Route::post('/lead', [MarketingController::class, 'captureLead'])->name('lead');
 Route::get('/features', [MarketingController::class, 'features'])->name('features');

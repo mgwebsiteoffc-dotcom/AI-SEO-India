@@ -77,6 +77,10 @@ Pages to check: `/` · `/pricing` · `/features` · `/how-it-works` · `/faq` ·
 | Demo mode (no Shopify needed) | ✅ | `/?demo=1` |
 | **SaaS owner panel** — stores, plans, MRR, leads, activity | ✅ | `/admin` |
 | **Owner settings** — toggle AI engines, tracker schedule, plan prices, run now | ✅ | `/admin/settings` |
+| **Instant indexing (IndexNow)** — product/blog changes pinged for fast AI-index freshness | ✅ | `/admin/settings` → IndexNow |
+| **agent.md** — storefront AI-agent manual on the App Proxy | ✅ | `llms.txt` tab · `/apps/ai-visibility/agent.md` |
+| **Shareable AI Readiness Scorecard** — public link + OG card per scan | ✅ | `/scorecard/{token}` |
+| Plan limits enforced (tracked queries + competitors per plan) | ✅ | API + UI |
 | Shopify **public-app approval kit** — GDPR webhooks, scopes, listing copy, CLI config | ✅ | `docs/SHOPIFY_APP_STORE_SUBMISSION.md` |
 
 ---
@@ -286,6 +290,8 @@ dashboard values, listing copy, pre-submission smoke test) lives in:
 - `docs/app-store/icon-ai-visibility.png` — 1024×1024 listing icon.
 
 ## Roadmap (next)
+- [ ] Weekly delta email report (mention-rate trends per query/engine)
+- [ ] Agency / white-label tier (multi-store dashboard + client reports)
 - [ ] Hindi UI + regional content (phase 2)
 - [ ] WooCommerce / standalone-site version
 - [ ] Per-plan feature-gating switches in `/admin/settings` (map to BillingService plans)

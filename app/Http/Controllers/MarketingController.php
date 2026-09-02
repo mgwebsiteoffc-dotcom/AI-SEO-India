@@ -9,6 +9,7 @@ use App\Services\AuditService;
 use App\Services\LlmClient;
 use App\Shopify\ShopifyService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class MarketingController extends Controller
 {
@@ -41,7 +42,7 @@ class MarketingController extends Controller
             'shop_url' => ['nullable', 'string', 'max:160'],
         ]);
 
-        Lead::firstOrCreate(['email' => $data['email']], [
+        $lead = Lead::firstOrCreate(['email' => $data['email']], [
             'brand' => $data['brand'] ?? null,
             'shop_url' => $data['shop_url'] ?? null,
             'source' => 'scorecard',
@@ -74,6 +75,21 @@ class MarketingController extends Controller
                 'issues' => $issues,
                 'failed' => ($run->status ?? null) === 'failed',
             ];
+            if (! $live['failed'] && ! empty($run->summary)) {
+                // Freeze a shareable snapshot + public link for the growth loop.
+                $payload = [
+                    'brand' => $data['brand'] ?: ($run->summary['brand'] ?? ucfirst(strtok($domain, '.'))),
+                    'domain' => $domain,
+                    'score' => $run->summary['total'] ?? $run->score,
+                    'grade' => $run->summary['grade'] ?? null,
+                    'categories' => $run->summary['categories'] ?? [],
+                    'issues' => $issues,
+                    'generated_at' => now()->setTimezone('Asia/Kolkata')->format('d M Y, H:i T'),
+                ];
+                $token = $lead->share_token ?: Str::random(32);
+                $lead->update(['share_token' => $token, 'share_payload' => $payload]);
+                $live['share_url'] = route('scorecard.share', $token);
+            }
         } catch (\Throwable $e) {
             $live = ['domain' => $domain, 'summary' => null, 'issues' => [], 'failed' => true];
         } finally {
@@ -108,6 +124,19 @@ class MarketingController extends Controller
         $host = strtok($host, '/') ?: $host;
 
         return preg_match('/^[a-z0-9\-\.]+\.[a-z]{2,}$/i', $host) ? $host : '';
+    }
+
+    /** Public share page: GET /scorecard/{token} — renders a frozen score snapshot. */
+    public function scorecardShare(string $token)
+    {
+        $lead = Lead::where('share_token', $token)->first();
+        if (! $lead || ! $lead->share_payload) {
+            abort(404);
+        }
+
+        return view('marketing.scorecard-share', [
+            'sharePayload' => $lead->share_payload,
+        ]);
     }
 
     public function captureLead(Request $request)

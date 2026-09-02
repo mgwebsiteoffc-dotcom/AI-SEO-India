@@ -87,6 +87,19 @@
                         <p class="text-xs text-slate-400">No issues recorded — great job. (A real storefront scan checks robots.txt, sitemap, schema, content and speed.)</p>
                     @endif
 
+                    @if (! empty($liveScore['share_url']))
+                        <div class="mt-6 rounded-2xl border border-brand-500/40 bg-brand-500/10 p-4">
+                            <div class="text-xs font-bold text-white">🎉 Share your score — it is live at</div>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
+                                <code class="text-[11px] text-brand-300 break-all flex-1">{{ $liveScore['share_url'] }}</code>
+                                <button onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent).then(()=>{const b=this;b.textContent='Copied ✓';setTimeout(()=>b.textContent='Copy link',1500)})"
+                                        class="btn !py-1.5 !text-[11px] shrink-0">Copy link</button>
+                                <a href="{{ $liveScore['share_url'] }}" target="_blank" class="btn-primary !py-1.5 !text-[11px] shrink-0">Open →</a>
+                            </div>
+                            <p class="text-[10px] text-slate-500 mt-2">Post it on LinkedIn/Instagram — founders love comparing AI scores. Your email stays private; the page shows only the score + fixes.</p>
+                        </div>
+                    @endif
+
                     <div class="mt-6 flex flex-wrap gap-3">
                         <a href="{{ route('install') }}" class="btn-primary !py-2.5 text-xs">Fix these with AI Visibility →</a>
                         <a href="{{ route('app', ['demo' => 1]) }}" class="btn-secondary !py-2.5 text-xs">See the fix loop on demo data</a>
