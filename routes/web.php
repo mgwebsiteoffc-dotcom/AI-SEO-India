@@ -34,6 +34,7 @@ Route::get('/install', [MarketingController::class, 'install'])->name('install')
 Route::get('/demo-store', [MarketingController::class, 'demoStore'])->name('demo-store');
 Route::get('/client-report/{token}', [MarketingController::class, 'clientReport'])->name('client.report');
 Route::get('/blog', [MarketingController::class, 'blog'])->name('blog');
+Route::get('/blog/category/{slug}', [MarketingController::class, 'blogCategory'])->name('blog.category');
 Route::get('/blog/{slug}', [MarketingController::class, 'blogShow'])->name('blog.show');
 Route::get('/privacy', [MarketingController::class, 'privacy'])->name('privacy');
 Route::get('/terms', [MarketingController::class, 'terms'])->name('terms');
@@ -54,6 +55,16 @@ Route::prefix('admin')->middleware('admin.guard')->group(function () {
     Route::post('/settings/weekly', [\App\Http\Controllers\AdminController::class, 'saveSettingsWeekly'])->name('admin.settings.weekly');
     Route::post('/settings/weekly-run', [\App\Http\Controllers\AdminController::class, 'runWeeklyReports'])->name('admin.settings.weekly-run');
     Route::post('/settings/run', [\App\Http\Controllers\AdminController::class, 'runTracking'])->name('admin.settings.run');
+    // Blog manager (posts + categories)
+    Route::get('/blog', [\App\Http\Controllers\AdminBlogController::class, 'index'])->name('admin.blog');
+    Route::get('/blog/categories', [\App\Http\Controllers\AdminBlogController::class, 'categories'])->name('admin.blog.categories');
+    Route::post('/blog/categories', [\App\Http\Controllers\AdminBlogController::class, 'storeCategory'])->name('admin.blog.categories.store');
+    Route::post('/blog/categories/{category}/delete', [\App\Http\Controllers\AdminBlogController::class, 'deleteCategory'])->name('admin.blog.categories.delete');
+    Route::get('/blog/create', [\App\Http\Controllers\AdminBlogController::class, 'create'])->name('admin.blog.create');
+    Route::post('/blog', [\App\Http\Controllers\AdminBlogController::class, 'store'])->name('admin.blog.store');
+    Route::get('/blog/{post}/edit', [\App\Http\Controllers\AdminBlogController::class, 'edit'])->name('admin.blog.edit');
+    Route::post('/blog/{post}', [\App\Http\Controllers\AdminBlogController::class, 'update'])->name('admin.blog.update');
+    Route::post('/blog/{post}/delete', [\App\Http\Controllers\AdminBlogController::class, 'destroy'])->name('admin.blog.delete');
     Route::post('/stores/{store}/plan', [\App\Http\Controllers\AdminController::class, 'updatePlan'])->name('admin.store.plan');
     Route::post('/stores/{store}/delete', [\App\Http\Controllers\AdminController::class, 'deleteStore'])->name('admin.store.delete');
     Route::post('/stores/{store}/toggle-tracking', [\App\Http\Controllers\AdminController::class, 'toggleStoreTracking'])->name('admin.store.tracking');

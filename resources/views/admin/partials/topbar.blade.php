@@ -3,6 +3,7 @@
         'overview' => ['route' => route('admin.overview'), 'label' => 'Overview'],
         'stores' => ['route' => route('admin.stores'), 'label' => 'Stores'],
         'leads' => ['route' => route('admin.leads'), 'label' => 'Leads'],
+        'blog' => ['route' => route('admin.blog'), 'label' => 'Blog'],
         'activity' => ['route' => route('admin.activity'), 'label' => 'Activity'],
         'settings' => ['route' => route('admin.settings'), 'label' => 'Settings'],
     ];

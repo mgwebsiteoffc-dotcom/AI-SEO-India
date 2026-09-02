@@ -74,6 +74,7 @@ Pages to check: `/` · `/pricing` · `/features` · `/how-it-works` · `/faq` ·
 | **Public marketing website** (landing, pricing, scorecard, blog) | ✅ | `/` `/pricing` `/scorecard` `/blog` |
 | Lead capture (free scorecard email) | ✅ | `/scorecard` |
 | Founder blog with BlogPosting JSON-LD | ✅ | `/blog` |
+| **SaaS-owner Blog Manager** — editor + slug, meta title/keywords/description, categories, FAQs → BlogPosting + FAQPage + Breadcrumb JSON-LD | ✅ | `/admin/blog` |
 | Demo mode (no Shopify needed) | ✅ | `/?demo=1` |
 | **SaaS owner panel** — stores, plans, MRR, leads, activity | ✅ | `/admin` |
 | **Owner settings** — toggle AI engines, tracker schedule, plan prices, run now | ✅ | `/admin/settings` |

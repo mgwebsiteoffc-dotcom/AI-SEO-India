@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BlogCategory;
 use App\Models\Lead;
 use App\Models\Post;
 use App\Models\Store;
@@ -257,15 +258,33 @@ class MarketingController extends Controller
         ]);
     }
 
-    public function blog()
+    public function blog(?BlogCategory $category = null)
     {
-        $posts = Post::whereNotNull('published_at')->orderByDesc('published_at')->get();
-        return view('marketing.blog', ['posts' => $posts]);
+        $posts = Post::query()
+            ->with('category')
+            ->published()
+            ->when($category, fn ($q) => $q->where('category_id', $category->id))
+            ->orderByDesc('published_at')
+            ->get();
+
+        return view('marketing.blog', [
+            'posts' => $posts,
+            'category' => $category,
+            'categories' => \App\Models\BlogCategory::withCount('posts')->orderBy('name')->get(),
+        ]);
+    }
+
+    /** GET /blog/category/{slug} → category landing (CollectionPage JSON-LD). */
+    public function blogCategory(string $slug)
+    {
+        $category = \App\Models\BlogCategory::where('slug', $slug)->firstOrFail();
+
+        return $this->blog($category);
     }
 
     public function blogShow(string $slug)
     {
-        $post = Post::where('slug', $slug)->whereNotNull('published_at')->firstOrFail();
+        $post = Post::with('category')->where('slug', $slug)->published()->firstOrFail();
         return view('marketing.post', ['post' => $post]);
     }
 

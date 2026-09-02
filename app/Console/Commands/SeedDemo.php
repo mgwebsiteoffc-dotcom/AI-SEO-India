@@ -203,8 +203,19 @@ class SeedDemo extends Command
             }
         }
 
-        // Marketing blog posts (our own AI-citation content engine)
+        // Marketing blog categories + posts (our own AI-citation content engine)
         Post::query()->delete();
+        \App\Models\BlogCategory::query()->delete();
+        $categoryBySlug = [];
+        foreach ([
+            ['ai-search', 'AI Search', 'AI search behaviour — how ChatGPT, Gemini and AI Overviews rank and cite brands in 2026.'],
+            ['d2c-growth', 'D2C Growth', 'Growth and trust playbooks for Indian D2C brands: reviews, local presence and AI-visible content.'],
+            ['seo-guides', 'SEO Guides', 'Step-by-step SEO and generative-engine-optimization guides: schema, crawlability and content structure.'],
+        ] as [$cSlug, $cName, $cDesc]) {
+            $categoryBySlug[$cSlug] = \App\Models\BlogCategory::create([
+                'name' => $cName, 'slug' => $cSlug, 'meta_description' => $cDesc,
+            ])->id;
+        }
         $posts = [
             [
                 'slug' => 'why-chatgpt-is-the-new-google-for-d2c',
@@ -228,8 +239,44 @@ class SeedDemo extends Command
                 'body' => '<p>ChatGPT sends ~78% of AI referral traffic today, but Gemini&rsquo;s referral volume grew <strong>388% YoY</strong> — the fastest of any AI platform. For Indian D2C, Gemini matters more than any other market: it ships on Android, where over three-quarters of Indian ecommerce happens.</p><h2>AI Overviews changed the game</h2><p>Google&rsquo;s AI Overviews answer questions directly above the organic results. Being cited inside an AI Overview is the new &ldquo;position one&rdquo; — and it is built from the same index, so classic SEO hygiene plus structured data still wins.</p><h2>The Indian angle</h2><p>With 950M+ Gemini users globally and the highest learning usage in India, shopping queries in Hindi-English mixes are rising fast. Brands that publish bilingual FAQs and ₹-priced comparison tables position themselves for both Gemini and ChatGPT.</p><h2>Act now, measure monthly</h2><p>The window is open: most Indian D2C stores have zero AI visibility work done. Track your mention rate across ChatGPT, Gemini and Perplexity monthly, and compound the technical fixes. First-movers in AI search will be the default answers.</p>',
             ],
         ];
+        // SEO/AEO enrichment per article (categories, meta title/keywords, FAQPage JSON-LD content).
+        $blogExtras = [
+            'why-chatgpt-is-the-new-google-for-d2c' => [
+                'category_id' => $categoryBySlug['ai-search'],
+                'meta_title' => 'Why ChatGPT Is the New Google for D2C Brands (2026 Data)',
+                'meta_keywords' => 'chatgpt seo, ai search india, d2c ai visibility, generative engine optimization, ai referrals',
+                'faqs' => [
+                    ['q' => 'Is ChatGPT really replacing Google for shopping?', 'a' => 'Not for everything — but 100M+ weekly ChatGPT users in India now ask conversational shopping questions and act on the answers. AI referrals already convert ~9x better than Google organic for the brands being cited.'],
+                    ['q' => 'How do D2C brands get recommended by ChatGPT?', 'a' => 'ChatGPT answers are assembled from crawlable pages, structured data and citation-worthy content. Allow AI crawlers, ship Product/FAQ JSON-LD, publish comparison content, and track your per-query mention rate weekly.'],
+                    ['q' => 'Is this only relevant for ChatGPT?', 'a' => 'No — the same signals feed Gemini, AI Overviews and Perplexity. Measure all of them; ChatGPT leads AI referral volume today, while Gemini grows fastest.'],
+                ],
+            ],
+            'ai-seo-scorecard-what-it-measures' => [
+                'category_id' => $categoryBySlug['seo-guides'],
+                'meta_title' => 'What an AI SEO Scorecard Measures (Honest Breakdown)',
+                'meta_keywords' => 'ai seo score, ai readiness score, ai visibility audit, chatgpt ranking signals',
+                'faqs' => [
+                    ['q' => 'Can anyone guarantee an AI ranking?', 'a' => 'No. As of 2026 no tool or agency can promise "rank #1 in ChatGPT" — AI visibility is a compounding outcome of real signals (crawlability, schema, content, brand), not a switch to flip.'],
+                    ['q' => 'Does llms.txt help you rank in AI search?', 'a' => 'No major AI engine has confirmed reading llms.txt, and large-scale studies show almost no citation lift from it. Treat it as cheap hygiene, not a strategy — structured data and content matter far more.'],
+                    ['q' => 'What moves the needle most for AI citations?', 'a' => 'Product and FAQ JSON-LD, an AI-crawler-friendly robots.txt, descriptive headings and 300+ word pages, and third-party mentions/reviews your brand cannot write itself.'],
+                ],
+            ],
+            'gemini-ai-overviews-d2c-traffic' => [
+                'category_id' => $categoryBySlug['ai-search'],
+                'meta_title' => 'Gemini & AI Overviews: The D2C Traffic Shift',
+                'meta_keywords' => 'gemini ai overviews, ai overviews seo, gemini traffic d2c india, zero click search',
+                'faqs' => [
+                    ['q' => 'Why does Gemini matter more in India than ChatGPT?', 'a' => 'Gemini ships on Android — the OS behind the majority of Indian ecommerce — and referral volume grew 388% year-on-year. It also feeds Google\'s AI Overviews, which answer queries above the classic results.'],
+                    ['q' => 'What is an AI Overview and why does it matter?', 'a' => 'Google\'s AI Overview answers a query directly on the results page, synthesised from the same index as organic results. Being cited inside it is the new position one — and it rewards classic SEO hygiene plus structured data.'],
+                    ['q' => 'Should Indian brands publish bilingual content for AI?', 'a' => 'Shopping queries in Hindi-English mixes are rising fast on Gemini. Publish FAQs and comparison tables that mirror how customers actually ask — in both English and Hinglish where relevant.'],
+                ],
+            ],
+        ];
         foreach ($posts as $p) {
-            Post::create($p + ['author' => 'AI Visibility Team', 'published_at' => now()->subDays(rand(2, 20))]);
+            Post::create(array_merge($p, $blogExtras[$p['slug']] ?? [], [
+                'author' => 'AI Visibility Team',
+                'published_at' => now()->subDays(rand(2, 20)),
+            ]));
         }
 
         // ---- SaaS-owner demo: a handful of fictional tenant stores -----------
