@@ -386,4 +386,27 @@ class ApiController extends Controller
         ]);
         return response()->json(['ok' => true]);
     }
+
+    // --------------------------------------------------------- onboarding
+
+    public function completeOnboarding(Request $request)
+    {
+        $store = $this->store($request);
+
+        $brandName = trim((string) $request->input('brand_name', ''));
+        $domain = trim((string) $request->input('domain', ''));
+        $settings = $store->settings ?? [];
+        $settings['whatsapp_number'] = trim((string) $request->input('whatsapp_number', ''));
+        $settings['language'] = in_array($request->input('language'), ['en', 'hi', 'hinglish'], true)
+            ? $request->input('language') : 'en';
+
+        $store->update([
+            'brand_name' => $brandName ?: null,
+            'domain' => $domain ?: null,
+            'onboarding_completed' => true,
+            'settings' => $settings,
+        ]);
+
+        return response()->json(['ok' => true]);
+    }
 }

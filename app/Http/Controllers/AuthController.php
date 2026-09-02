@@ -44,6 +44,16 @@ class AuthController extends Controller
         } catch (\Throwable $e) {
             return response('OAuth failed: '.$e->getMessage(), 500);
         }
+
+        // Redirect directly into the embedded app so the merchant lands on
+        // the onboarding flow instead of the generic apps list.
+        $apiKey = config('shopify.api_key');
+        if ($apiKey) {
+            return redirect()->away(
+                "https://{$store->shop}/admin/apps/{$apiKey}"
+            );
+        }
+
         return redirect()->away(
             "https://{$store->shop}/admin/apps/"
         );

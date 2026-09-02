@@ -95,4 +95,5 @@ Route::prefix('api')->middleware(VerifyShopifySession::class)->group(function ()
     Route::get('/content/sentiment', [ContentController::class, 'sentiment']);
     Route::get('/settings', [ApiController::class, 'settings']);
     Route::post('/settings', [ApiController::class, 'saveSettings']);
+    Route::post('/onboarding/complete', [ApiController::class, 'completeOnboarding']);
 });

@@ -34,6 +34,7 @@ class AppController extends Controller
             'apiKey' => config('shopify.api_key'),
             'host' => $request->query('host', ''),
             'shop' => $store->shop,
+            'onboardingCompleted' => (bool) $store->onboarding_completed,
         ]);
     }
 }
