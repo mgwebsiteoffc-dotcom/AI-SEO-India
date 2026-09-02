@@ -15,3 +15,10 @@ Schedule::command('visibility:track --all')
     ->when(fn () => app(\App\Services\SaasSettingsService::class)->trackingEnabled())
     ->when(fn () => now('Asia/Kolkata')->format('H:i') === (app(\App\Services\SaasSettingsService::class)->tracking()['time'] ?? '06:00'))
     ->withoutOverlapping();
+
+// Instant Indexing (IndexNow) — push changed storefront URLs every 15 min
+// whenever the owner enables the service in /admin/settings.
+Schedule::command('indexnow:flush --all')
+    ->everyFifteenMinutes()
+    ->when(fn () => app(\App\Services\IndexNowService::class)->enabled())
+    ->withoutOverlapping();

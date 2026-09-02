@@ -22,7 +22,9 @@ class WebhookController extends Controller
             \App\Shopify\ShopifyService::init();
 
             Registry::addHandler(Topics::APP_UNINSTALLED, new AppUninstalledHandler());
+            Registry::addHandler(Topics::PRODUCTS_CREATE, new ProductsUpdateHandler());
             Registry::addHandler(Topics::PRODUCTS_UPDATE, new ProductsUpdateHandler());
+            Registry::addHandler(Topics::PRODUCTS_DELETE, new ProductsUpdateHandler());
             Registry::addHandler(Topics::ORDERS_PAID, new OrdersPaidHandler());
             // GDPR (required for public app review)
             Registry::addHandler(Topics::CUSTOMERS_DATA_REQUEST, new CustomerDataRequestHandler());

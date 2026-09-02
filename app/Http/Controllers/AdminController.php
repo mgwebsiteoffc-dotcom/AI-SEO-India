@@ -9,7 +9,9 @@ use App\Models\Post;
 use App\Models\Store;
 use App\Models\TrackedQuery;
 use App\Models\WebhookCall;
+use App\Models\IndexnowSubmission;
 use App\Services\BillingService;
+use App\Services\IndexNowService;
 use App\Services\SaasSettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -153,6 +155,8 @@ class AdminController extends Controller
             ]);
         }
 
+        $indexnow = app(IndexNowService::class);
+
         return view('admin.settings', [
             'engines' => $engines,
             'tracking' => $saas->tracking(),
@@ -164,6 +168,12 @@ class AdminController extends Controller
             'storeCounts' => [
                 'tracking' => Store::where('tracking_enabled', true)->where(fn ($q) => $q->whereNotNull('shopify_token')->orWhere('is_demo', true))->count(),
                 'all' => Store::count(),
+            ],
+            'indexnow' => [
+                'enabled' => (bool) ($indexnow->config()['enabled'] ?? false),
+                'key' => $indexnow->key(),
+                'pending' => IndexnowSubmission::whereNull('submitted_at')->count(),
+                'sent' => IndexnowSubmission::whereNotNull('submitted_at')->count(),
             ],
         ]);
     }
@@ -208,6 +218,38 @@ class AdminController extends Controller
         );
 
         return back()->with('status', 'Plan prices updated — new charges use these amounts.');
+    }
+
+    /** POST /admin/settings/indexnow — master switch + shared key for instant indexing. */
+    public function saveSettingsIndexNow(Request $request)
+    {
+        app(IndexNowService::class)->saveConfig(
+            $request->boolean('indexnow_enabled'),
+            (string) $request->input('indexnow_key', '')
+        );
+
+        return back()->with('status', $request->boolean('indexnow_enabled')
+            ? 'IndexNow enabled — changed product/blog URLs are now pinged for instant indexing.'
+            : 'IndexNow disabled. No further URLs will be submitted.');
+    }
+
+    /** POST /admin/settings/indexnow-run — submit all queued URLs now. */
+    public function runIndexNow(Request $request)
+    {
+        $exit = Artisan::call('indexnow:flush --all');
+
+        return back()->with($exit === 0 ? 'status' : 'error',
+            $exit === 0 ? 'IndexNow flush finished — '.trim((string) Artisan::output()) : 'IndexNow flush had errors — see the server log.');
+    }
+
+    /** POST /admin/stores/{store}/toggle-indexnow — per-store instant-indexing opt-out. */
+    public function toggleStoreIndexNow(Request $request, Store $store)
+    {
+        $settings = $store->settings ?? [];
+        $settings['indexnow_enabled'] = ! (bool) ($settings['indexnow_enabled'] ?? true);
+        $store->update(['settings' => $settings]);
+
+        return back()->with('status', (($settings['indexnow_enabled'] ?? true) ? 'IndexNow enabled for ' : 'IndexNow paused for ').$store->shop.'.');
     }
 
     /** POST /admin/settings/run — run the visibility snapshot now for all active stores. */

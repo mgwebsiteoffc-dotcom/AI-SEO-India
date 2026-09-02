@@ -52,11 +52,19 @@
                             <td class="px-4 py-3">
                                 <div class="text-[11px] text-slate-500">{{ $s->created_at->format('d M Y') }}</div>
                                 @if (!$s->is_demo)
-                                    <form method="POST" action="{{ route('admin.store.tracking', $s) }}" class="mt-1.5">
+                                    @php($inx = (bool) ($s->settings['indexnow_enabled'] ?? true))
+                                    <form method="POST" action="{{ route('admin.store.tracking', $s) }}" class="mt-1.5 inline-block">
                                         @csrf
                                         <button class="text-[10px] font-semibold {{ $s->tracking_enabled ? 'text-emerald-400 hover:text-emerald-300' : 'text-slate-500 hover:text-slate-400' }}"
                                                 title="{{ $s->tracking_enabled ? 'Click to pause daily snapshots' : 'Click to resume daily snapshots' }}">
                                             {{ $s->tracking_enabled ? '● tracking on' : '○ tracking paused' }}
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('admin.store.indexnow', $s) }}" class="mt-1.5 inline-block ml-3">
+                                        @csrf
+                                        <button class="text-[10px] font-semibold {{ $inx ? 'text-sky-400 hover:text-sky-300' : 'text-slate-500 hover:text-slate-400' }}"
+                                                title="{{ $inx ? 'Click to pause IndexNow pings for this store' : 'Click to resume IndexNow pings for this store' }}">
+                                            {{ $inx ? '⤴ indexnow on' : '⤴ indexnow off' }}
                                         </button>
                                     </form>
                                 @endif

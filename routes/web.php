@@ -47,10 +47,13 @@ Route::prefix('admin')->middleware('admin.guard')->group(function () {
     Route::post('/settings/engines', [\App\Http\Controllers\AdminController::class, 'saveSettingsEngines'])->name('admin.settings.engines');
     Route::post('/settings/tracking', [\App\Http\Controllers\AdminController::class, 'saveSettingsTracking'])->name('admin.settings.tracking');
     Route::post('/settings/billing', [\App\Http\Controllers\AdminController::class, 'saveSettingsBilling'])->name('admin.settings.billing');
+    Route::post('/settings/indexnow', [\App\Http\Controllers\AdminController::class, 'saveSettingsIndexNow'])->name('admin.settings.indexnow');
+    Route::post('/settings/indexnow-run', [\App\Http\Controllers\AdminController::class, 'runIndexNow'])->name('admin.settings.indexnow-run');
     Route::post('/settings/run', [\App\Http\Controllers\AdminController::class, 'runTracking'])->name('admin.settings.run');
     Route::post('/stores/{store}/plan', [\App\Http\Controllers\AdminController::class, 'updatePlan'])->name('admin.store.plan');
     Route::post('/stores/{store}/delete', [\App\Http\Controllers\AdminController::class, 'deleteStore'])->name('admin.store.delete');
     Route::post('/stores/{store}/toggle-tracking', [\App\Http\Controllers\AdminController::class, 'toggleStoreTracking'])->name('admin.store.tracking');
+    Route::post('/stores/{store}/toggle-indexnow', [\App\Http\Controllers\AdminController::class, 'toggleStoreIndexNow'])->name('admin.store.indexnow');
     Route::post('/leads/{lead}/delete', [\App\Http\Controllers\AdminController::class, 'deleteLead'])->name('admin.lead.delete');
 });
 

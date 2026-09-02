@@ -39,8 +39,16 @@ topics = [ "app/uninstalled" ]
 uri = "https://{{env.SHOPIFY_APP_HOST_NAME}}/webhooks/app/uninstalled"
 
 [[webhooks.subscriptions]]
+topics = [ "products/create" ]
+uri = "https://{{env.SHOPIFY_APP_HOST_NAME}}/webhooks/products/create"
+
+[[webhooks.subscriptions]]
 topics = [ "products/update" ]
 uri = "https://{{env.SHOPIFY_APP_HOST_NAME}}/webhooks/products/update"
+
+[[webhooks.subscriptions]]
+topics = [ "products/delete" ]
+uri = "https://{{env.SHOPIFY_APP_HOST_NAME}}/webhooks/products/delete"
 
 [[webhooks.subscriptions]]
 topics = [ "orders/paid" ]

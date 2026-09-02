@@ -105,6 +105,44 @@
             </form>
         </section>
 
+        {{-- ── Instant indexing (IndexNow) ──────────────────────────────── --}}
+        <section class="glass rounded-2xl p-5 md:p-6">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                <div>
+                    <h2 class="font-display font-bold text-white text-lg">Instant indexing — IndexNow</h2>
+                    <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                        When a merchant adds/updates/deletes a product or publishes a blog article, we ping
+                        <code class="text-brand-300 text-xs">api.indexnow.org</code> so search engines (and the indexes AI
+                        engines read) notice immediately — no waiting for recrawls. Pending URLs flush automatically every 15 minutes.
+                    </p>
+                </div>
+                <span class="badge {{ $indexnow['enabled'] ? 'badge-green' : 'badge-slate' }} shrink-0">
+                    {{ $indexnow['enabled'] ? 'Enabled' : 'Disabled' }} · {{ $indexnow['pending'] }} pending · {{ $indexnow['sent'] }} sent
+                </span>
+            </div>
+            <form method="POST" action="{{ route('admin.settings.indexnow') }}" class="mt-4 flex flex-col sm:flex-row sm:items-end gap-4">
+                @csrf
+                <label class="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 cursor-pointer shrink-0">
+                    <input type="checkbox" name="indexnow_enabled" value="1" {{ $indexnow['enabled'] ? 'checked' : '' }} class="w-4 h-4 accent-brand-500">
+                    <span class="text-sm font-semibold text-white">Service enabled</span>
+                </label>
+                <label class="flex flex-col gap-1 flex-1">
+                    <span class="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">IndexNow key <span class="normal-case">(shared across stores — leave blank to auto-generate)</span></span>
+                    <input type="text" name="indexnow_key" value="{{ $indexnow['key'] }}" placeholder="auto-generated hex key" class="input !py-2 !text-sm font-mono" />
+                </label>
+                <button class="btn-primary !py-2 text-xs">Save IndexNow</button>
+            </form>
+            <form method="POST" action="{{ route('admin.settings.indexnow-run') }}" class="mt-3 flex items-center gap-3 flex-wrap">
+                @csrf
+                <button class="btn !py-2 text-xs !bg-sky-500/15 !text-sky-300 border-sky-500/30 hover:!bg-sky-500/25">▶ Flush pending now</button>
+                <span class="text-[11px] text-slate-500">Runs <code class="text-brand-300 text-xs">indexnow:flush --all</code>.</span>
+            </form>
+            <p class="text-[11px] text-slate-600 mt-3 leading-relaxed">
+                Per-store opt-out is on <a href="{{ route('admin.stores') }}" class="text-brand-400 hover:text-brand-300 font-semibold">Stores → tracking/IndexNow</a>.
+                Note: IndexNow helps freshness — it is not an llms.txt-style promise; AI engines still decide what they cite.
+            </p>
+        </section>
+
         {{-- ── Plan pricing ──────────────────────────────────────────────── --}}
         <section class="glass rounded-2xl p-5 md:p-6">
             <h2 class="font-display font-bold text-white text-lg">Plan pricing (INR / month)</h2>

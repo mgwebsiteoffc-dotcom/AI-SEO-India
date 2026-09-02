@@ -54,7 +54,9 @@ class OAuthService
         $base = rtrim(config('app.url'), '/');
         $topics = [
             Topics::APP_UNINSTALLED => "/webhooks/app/uninstalled",
+            Topics::PRODUCTS_CREATE => "/webhooks/products/create",
             Topics::PRODUCTS_UPDATE => "/webhooks/products/update",
+            Topics::PRODUCTS_DELETE => "/webhooks/products/delete",
             Topics::ORDERS_PAID => "/webhooks/orders/paid",
             // Mandatory GDPR webhooks for every public app (approval checklist).
             Topics::CUSTOMERS_DATA_REQUEST => "/webhooks/customers/data_request",

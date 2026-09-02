@@ -203,6 +203,15 @@ class SmartBlogger
                 'shopify_article_url' => $data['article']['url'] ?? null,
             ]);
 
+            // Instant indexing: tell IndexNow the new article is live.
+            if (! empty($data['article']['url'])) {
+                try {
+                    app(\App\Services\IndexNowService::class)->queueUrl($store, $data['article']['url']);
+                } catch (\Throwable $e) {
+                    Log::debug('IndexNow queue on publish failed: '.$e->getMessage());
+                }
+            }
+
             return ['ok' => true, 'article' => $data['article'] ?? null];
         } catch (\Throwable $e) {
             Log::warning('Article publish failed: '.$e->getMessage());
