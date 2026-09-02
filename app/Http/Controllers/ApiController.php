@@ -123,6 +123,107 @@ class ApiController extends Controller
         ];
     }
 
+    // ----------------------------------------------------------- agency tier
+
+    /** Gate: only Agency-plan stores can manage clients. */
+    private function agency(Request $request): Store
+    {
+        $store = $this->store($request);
+        abort_unless($store->isAgency(), 403, 'The Agency plan is required to manage client stores.');
+        return $store;
+    }
+
+    /** GET /api/clients — read-only overview of the agency's client stores. */
+    public function clients(Request $request)
+    {
+        $agency = $this->agency($request);
+        $clients = $agency->clients()->orderByDesc('id')->get()->map(function ($c) {
+            $audit = $c->audits()->where('status', 'completed')->latest()->first();
+            $signal = $c->brandSignalRuns()->latest()->first();
+            $latest = $c->snapshots()->orderByDesc('snapshot_date')->first();
+            return [
+                'id' => $c->id,
+                'shop' => $c->shop,
+                'brand' => $c->brand_name ?: ucfirst(strtok($c->shop, '.')),
+                'domain' => $c->hostname(),
+                'plan' => $c->plan,
+                'audit_score' => $audit?->score,
+                'brand_score' => $signal?->score,
+                'mention_rate' => $latest ? $latest->mentionRate() : null,
+                'report_url' => $c->report_token ? url('/client-report/'.$c->report_token) : null,
+                'created_at' => $c->created_at?->toIso8601String(),
+            ];
+        })->values();
+
+        return response()->json(['clients' => $clients]);
+    }
+
+    /**
+     * POST /api/clients/invite {shop}
+     * Returns an OAuth install link that attributes the merchant to this
+     * agency. In demo mode (no live credentials) it simulates the client row.
+     */
+    public function inviteClient(Request $request)
+    {
+        $agency = $this->agency($request);
+        $shop = strtolower(trim((string) $request->input('shop')));
+        if (! preg_match('/^[a-z0-9\-]+\.myshopify\.com$/', $shop)) {
+            return response()->json(['error' => 'Enter a valid store domain, e.g. your-client.myshopify.com'], 422);
+        }
+        if ($agency->clients()->where('shop', $shop)->exists()) {
+            return response()->json(['error' => 'That store is already one of your clients.'], 422);
+        }
+
+        // No live Shopify credentials → demo simulation so the flow is testable.
+        if (! \App\Shopify\ShopifyService::init()) {
+            $client = \App\Models\Store::create([
+                'shop' => $shop,
+                'brand_name' => ucwords(str_replace(['-', '.myshopify.com'], [' ', ''], $shop)),
+                'domain' => null,
+                'plan' => 'free',
+                'currency' => 'INR',
+                'country' => 'IN',
+                'parent_store_id' => $agency->id,
+                'report_token' => \Illuminate\Support\Str::random(32),
+            ]);
+            return response()->json([
+                'demo' => true,
+                'client' => $client->only(['id', 'shop', 'brand_name']),
+                'message' => 'Demo mode: client added locally. In production this generates a Shopify install link.',
+            ], 201);
+        }
+
+        $url = url('/auth/install?shop='.urlencode($shop).'&agency='.urlencode($agency->shop));
+        return response()->json(['install_url' => $url]);
+    }
+
+    /** DELETE /api/clients/{id} — detach a client (and revoke its report link). */
+    public function detachClient(Request $request, int $id)
+    {
+        $agency = $this->agency($request);
+        $client = $agency->clients()->find($id);
+        if (! $client) {
+            return response()->json(['error' => 'Client not found'], 404);
+        }
+        $client->update(['parent_store_id' => null, 'report_token' => null]);
+        return response()->json(['ok' => true]);
+    }
+
+    /** Agency branding metadata for the settings screen + reports. */
+    private function agencyMeta(Store $store): ?array
+    {
+        if (! $store->isAgency()) {
+            return null;
+        }
+        $s = $store->settings ?? [];
+        return [
+            'plan' => 'agency',
+            'name' => $s['agency_name'] ?? $store->brand_name ?: ucfirst(strtok($store->shop, '.')),
+            'website' => $s['agency_website'] ?? null,
+            'white_label' => (bool) ($s['white_label'] ?? false),
+        ];
+    }
+
     // ----------------------------------------------------------- brand signals
 
     public function brandSignals(Request $request)
@@ -412,6 +513,7 @@ class ApiController extends Controller
             'language' => $settings['language'] ?? 'en',
             'ga4_property_id' => $settings['ga4_property_id'] ?? null,
             'report_email' => $settings['report_email'] ?? null,
+            'agency' => $this->agencyMeta($store),
         ]);
     }
 
@@ -426,6 +528,14 @@ class ApiController extends Controller
         $settings['ga4_property_id'] = preg_match('/^\d{6,12}$/', $ga4Id) ? $ga4Id : null;
         $reportEmail = trim((string) $request->input('report_email', $settings['report_email'] ?? ''));
         $settings['report_email'] = $reportEmail !== '' && filter_var($reportEmail, FILTER_VALIDATE_EMAIL) ? $reportEmail : null;
+
+        // Agency white-label branding (only meaningful on the Agency plan).
+        if ($store->isAgency()) {
+            $settings['agency_name'] = trim((string) $request->input('agency_name', $settings['agency_name'] ?? ''));
+            $settings['agency_website'] = trim((string) $request->input('agency_website', $settings['agency_website'] ?? ''));
+            $settings['white_label'] = (bool) $request->input('white_label', $settings['white_label'] ?? false);
+        }
+
         $store->update([
             'brand_name' => trim((string) $request->input('brand_name', $store->brand_name)),
             'domain' => trim((string) $request->input('domain', $store->domain)),

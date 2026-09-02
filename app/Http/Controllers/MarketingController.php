@@ -126,6 +126,55 @@ class MarketingController extends Controller
         return preg_match('/^[a-z0-9\-\.]+\.[a-z]{2,}$/i', $host) ? $host : '';
     }
 
+    /** White-label client report: GET /client-report/{token} (agency tier). */
+    public function clientReport(string $token)
+    {
+        $store = \App\Models\Store::where('report_token', $token)->first();
+        abort_unless($store && $store->parentStore, 404);
+
+        $audit = $store->audits()->where('status', 'completed')->latest()->first();
+        $signal = $store->brandSignalRuns()->latest()->first();
+        $today = now()->startOfDay();
+
+        // Latest per-engine mention rates + 7-day weighted trend.
+        $snapshots = $store->snapshots()->whereBetween('snapshot_date', [$today->copy()->subDays(6), $today])->get();
+        $engines = $snapshots->groupBy('engine')->map(fn ($rows) => [
+            'engine' => $rows->last()->engine,
+            'rate' => $rows->last()->mentionRate(),
+        ])->values();
+        $trend = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $rows = $snapshots->filter(fn ($r) => $r->snapshot_date->isSameDay($today->copy()->subDays($i)));
+            $trend[] = [
+                'date' => $today->copy()->subDays($i)->format('d M'),
+                'rate' => $rows->sum('total_queries') > 0
+                    ? round($rows->sum('mentioned') / $rows->sum('total_queries') * 100, 1) : null,
+            ];
+        }
+
+        $issues = $audit?->issues()->orderByRaw(
+            "CASE severity WHEN 'critical' THEN 0 WHEN 'warning' THEN 1 ELSE 2 END"
+        )->take(5)->get(['severity', 'title', 'recommendation'])->toArray() ?? [];
+
+        $agency = $store->parentStore;
+        $asettings = $agency->settings ?? [];
+        $whiteLabel = (bool) ($asettings['white_label'] ?? false);
+        $agencyName = trim((string) ($asettings['agency_name'] ?? '')) ?: ($agency->brand_name ?: ucfirst(strtok($agency->shop, '.')));
+
+        return view('marketing.client-report', [
+            'store' => $store,
+            'audit' => $audit,
+            'signal' => $signal,
+            'engines' => $engines,
+            'trend' => $trend,
+            'issues' => $issues,
+            'agencyName' => $agencyName,
+            'agencyWebsite' => trim((string) ($asettings['agency_website'] ?? '')),
+            'whiteLabel' => $whiteLabel,
+            'asOf' => now()->setTimezone('Asia/Kolkata')->format('d M Y, H:i T'),
+        ]);
+    }
+
     /** Public share page: GET /scorecard/{token} — renders a frozen score snapshot. */
     public function scorecardShare(string $token)
     {

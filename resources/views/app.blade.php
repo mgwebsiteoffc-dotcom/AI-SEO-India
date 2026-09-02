@@ -21,7 +21,7 @@
 </head>
 <body>
     <div id="app"
-         data-demo="{{ $demo ? '1' : '0' }}"
+         data-demo="{{ $demo ? ($demoVal === 'agency' ? 'agency' : '1') : '0' }}"
          data-api-key="{{ $apiKey }}"
          data-host="{{ $host }}"
          data-shop="{{ $shop }}"

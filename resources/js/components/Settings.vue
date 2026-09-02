@@ -34,6 +34,26 @@
           <input v-model="ga4Id" class="input mt-1" placeholder="e.g. 123456789 — service account credentials come from .env" />
           <div class="text-[11px] text-slate-500 mt-1">Powers the GA4 Data API report in AI Traffic &amp; Orders.</div>
         </div>
+        <template v-if="agency">
+          <div class="border-t border-slate-200 pt-4">
+            <div class="text-xs font-bold text-slate-900 uppercase tracking-wide mb-3">Agency branding (white-label)</div>
+            <div class="space-y-4">
+              <div>
+                <label class="text-xs font-semibold text-slate-600">Agency name (shown on client reports)</label>
+                <input v-model="agencyName" class="input mt-1" placeholder="e.g. GrowthWorks Digital" />
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-slate-600">Agency website</label>
+                <input v-model="agencyWebsite" class="input mt-1" placeholder="https://growthworks.in" />
+              </div>
+              <label class="flex items-center gap-2.5 cursor-pointer">
+                <input v-model="whiteLabel" type="checkbox" class="w-4 h-4 accent-brand-600" />
+                <span class="text-xs text-slate-700 font-semibold">White-label mode — hide the “Generated with AI Visibility” watermark on client reports</span>
+              </label>
+              <div class="text-[11px] text-slate-500 leading-relaxed">Each client report link you copy from My Clients is branded with this name. While white-label is on, the AI Visibility attribution is hidden.</div>
+            </div>
+          </div>
+        </template>
         <div class="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
           <span>Shopify store</span>
           <span class="font-semibold">{{ shop }}</span>
@@ -76,6 +96,10 @@ const whatsapp = ref('');
 const language = ref('en');
 const ga4Id = ref('');
 const reportEmail = ref('');
+const agency = ref(null);
+const agencyName = ref('');
+const agencyWebsite = ref('');
+const whiteLabel = ref(false);
 
 onMounted(async () => {
     try {
@@ -87,6 +111,10 @@ onMounted(async () => {
         language.value = d.language || 'en';
         ga4Id.value = d.ga4_property_id || '';
         reportEmail.value = d.report_email || '';
+        agency.value = d.agency || null;
+        agencyName.value = agency.value?.name || '';
+        agencyWebsite.value = agency.value?.website || '';
+        whiteLabel.value = !!agency.value?.white_label;
     } catch (e) { /* session */ }
 });
 
@@ -98,6 +126,9 @@ async function save() {
         language: language.value,
         ga4_property_id: ga4Id.value,
         report_email: reportEmail.value,
+        agency_name: agencyName.value,
+        agency_website: agencyWebsite.value,
+        white_label: whiteLabel.value,
     });
     emit('saved');
     alert('Saved ✓');

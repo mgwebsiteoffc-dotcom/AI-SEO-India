@@ -32,6 +32,7 @@ Route::get('/how-it-works', [MarketingController::class, 'howItWorks'])->name('h
 Route::get('/faq', [MarketingController::class, 'faq'])->name('faq');
 Route::get('/install', [MarketingController::class, 'install'])->name('install');
 Route::get('/demo-store', [MarketingController::class, 'demoStore'])->name('demo-store');
+Route::get('/client-report/{token}', [MarketingController::class, 'clientReport'])->name('client.report');
 Route::get('/blog', [MarketingController::class, 'blog'])->name('blog');
 Route::get('/blog/{slug}', [MarketingController::class, 'blogShow'])->name('blog.show');
 Route::get('/privacy', [MarketingController::class, 'privacy'])->name('privacy');
@@ -81,6 +82,9 @@ Route::prefix('apps/ai-visibility')->middleware(VerifyProxyRequest::class)->grou
 // Embedded app JSON API (JWT-session protected)
 Route::prefix('api')->middleware(VerifyShopifySession::class)->group(function () {
     Route::get('/dashboard', [ApiController::class, 'dashboard']);
+    Route::get('/clients', [ApiController::class, 'clients']);
+    Route::post('/clients/invite', [ApiController::class, 'inviteClient']);
+    Route::delete('/clients/{id}', [ApiController::class, 'detachClient']);
     Route::get('/brand-signals', [ApiController::class, 'brandSignals']);
     Route::post('/brand-signals/run', [ApiController::class, 'runBrandSignals']);
     Route::get('/audit/latest', [ApiController::class, 'latestAudit']);

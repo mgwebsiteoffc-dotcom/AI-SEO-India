@@ -303,7 +303,107 @@ class SeedDemo extends Command
             }
         }
 
-        $this->info('Demo store seeded: demo-brand.myshopify.com (Aurelia Naturals)');
+        
+        // ---- Agency tier demo: one agency + one client store -----------------
+        // The agency is reachable at /?demo=agency (its "My Clients" tab lists
+        // the client below); the client's white-label report is live at its
+        // /client-report/{token}.
+        $agency = Store::updateOrCreate(
+            ['shop' => 'demo-agency.myshopify.com'],
+            [
+                'shopify_token' => 'demo-token',
+                'plan' => 'agency',
+                'billing_status' => 'active',
+                'brand_name' => 'Aurelia Digital',
+                'domain' => null,
+                'country' => 'IN',
+                'currency' => 'INR',
+                'is_demo' => false,
+                'settings' => [
+                    'agency_name' => 'Aurelia Digital Agency',
+                    'agency_website' => 'https://aureliadigital.in',
+                    'white_label' => false,
+                ],
+            ]
+        );
+
+        $client = Store::where('shop', 'urban-botanics.myshopify.com')->first();
+        $token = $client?->report_token ?? \Illuminate\Support\Str::random(32);
+        $client = Store::updateOrCreate(
+            ['shop' => 'urban-botanics.myshopify.com'],
+            [
+                'shopify_token' => 'demo-token',
+                'plan' => 'grow',
+                'billing_status' => 'active',
+                'brand_name' => 'Urban Botanics',
+                'domain' => 'urbanbotanics.in',
+                'country' => 'IN',
+                'currency' => 'INR',
+                'is_demo' => false,
+                'parent_store_id' => $agency->id,
+                'report_token' => $token,
+            ]
+        );
+
+        // Client metrics so its report has something to show.
+        $client->audits()->delete();
+        $cRun = AuditRun::create([
+            'store_id' => $client->id,
+            'score' => 81,
+            'status' => 'completed',
+            'summary' => ['total' => 81, 'grade' => 'B', 'checked_at' => now()->toIso8601String()],
+            'started_at' => now()->subHour(),
+            'completed_at' => now()->subHour(),
+        ]);
+        foreach ([
+            ['schema', 'warning', 'schema_product_missing', 'No Product schema on product pages', 'None of the checked product pages exposed Product JSON-LD - one of the strongest AI-citation signals.', 'Enable Product schema via the Schema Builder.', false],
+            ['content', 'info', 'no_faq', 'No FAQ content detected', 'Q&A blocks are "citation-ready" - engines quote them verbatim.', 'Add 3-5 FAQs per product page.', false],
+            ['brand', 'info', 'reviews_found', 'Customer reviews detected', 'Ratings + review text are visible on product pages.', 'Nothing to do.', false],
+        ] as $i) {
+            AuditIssue::create([
+                'audit_run_id' => $cRun->id,
+                'category' => $i[0], 'severity' => $i[1], 'code' => $i[2], 'title' => $i[3],
+                'detail' => $i[4], 'recommendation' => $i[5], 'is_fixed' => $i[6],
+            ]);
+        }
+
+        $client->snapshots()->delete();
+        for ($d = 13; $d >= 0; $d--) {
+            foreach (['chatgpt', 'gemini', 'perplexity'] as $e) {
+                $base = match ($e) { 'chatgpt' => 0.30, 'gemini' => 0.20, default => 0.12 };
+                $rate = min(0.9, $base + ((14 - $d) / 14) * 0.35 + rand(-3, 5) / 100);
+                AiSnapshot::create([
+                    'store_id' => $client->id,
+                    'snapshot_date' => now()->startOfDay()->subDays($d),
+                    'engine' => $e,
+                    'total_queries' => 6,
+                    'mentioned' => (int) round(6 * $rate),
+                    'cited' => (int) round(6 * $rate * 0.6),
+                    'samples' => $d === 0 ? [[
+                        'query' => 'best plant based serums india',
+                        'mentioned' => true,
+                        'cited' => true,
+                        'snippet' => 'Urban Botanics makes a well-reviewed vegan face serum that suits combination Indian skin.',
+                    ]] : null,
+                ]);
+            }
+        }
+
+        $client->brandSignalRuns()->delete();
+        \App\Models\BrandSignalRun::create([
+            'store_id' => $client->id,
+            'score' => 52,
+            'summary' => ['total' => 52, 'grade' => 'C', 'checked_at' => now()->toIso8601String(), 'domain' => 'urbanbotanics.in'],
+            'checks' => [
+                ['key' => 'rating_schema', 'label' => 'Ratings in structured data', 'found' => true, 'detail' => 'Product/site exposes ratingValue + reviewCount in JSON-LD.', 'fix' => 'Add AggregateRating JSON-LD (ratingValue + reviewCount) to your Product schema - AI engines parse it directly.', 'score' => 30, 'max' => 30],
+                ['key' => 'review_content', 'label' => 'Visible reviews / testimonials', 'found' => true, 'detail' => 'Found review/testimonial content with ratings on the storefront.', 'fix' => 'Publish real customer reviews/testimonials on product pages (with star ratings).', 'score' => 15, 'max' => 15],
+                ['key' => 'platform_presence', 'label' => 'Review platforms', 'found' => false, 'detail' => 'No review-platform presence found in web results.', 'fix' => 'Claim profiles on review platforms (Trustpilot, Google Business Profile, MouthShut, JustDial).', 'score' => 0, 'max' => 25],
+                ['key' => 'third_party_mentions', 'label' => 'Off-site mentions', 'found' => false, 'detail' => 'No off-site mentions found for the brand.', 'fix' => 'Earn mentions from blogs, press and communities - off-site mentions correlate most strongly with AI citations.', 'score' => 0, 'max' => 20],
+                ['key' => 'social_profiles', 'label' => 'Social profiles linked', 'found' => true, 'detail' => 'Linked profiles: instagram.com, youtube.com.', 'fix' => 'Link Instagram / Facebook / YouTube / X profiles from your site.', 'score' => 7, 'max' => 10],
+            ],
+        ]);
+
+$this->info('Demo store seeded: demo-brand.myshopify.com (Aurelia Naturals)');
         $this->info('SaaS owner demo: /admin (+ 6 tenant stores, '.(\App\Models\Lead::count()).' leads)');
         $this->info('Open: '.config('app.url').'/?demo=1  (or /auth/demo)');
         return self::SUCCESS;

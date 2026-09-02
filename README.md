@@ -81,6 +81,9 @@ Pages to check: `/` · `/pricing` · `/features` · `/how-it-works` · `/faq` ·
 | **agent.md** — storefront AI-agent manual on the App Proxy | ✅ | `llms.txt` tab · `/apps/ai-visibility/agent.md` |
 | **Shareable AI Readiness Scorecard** — public link + OG card per scan | ✅ | `/scorecard/{token}` |
 | Plan limits enforced (tracked queries + competitors per plan) | ✅ | API + UI |
+| **Weekly AI Visibility Report** — Monday email digest (mention-rate delta per engine, trend, citations) | ✅ | Settings tab → report email · `/admin/settings` |
+| **Brand Signals panel** — rating schema, reviews, review-platform presence, off-site mentions, social | ✅ | Brand Signals tab |
+| **Agency / white-label tier** — multi-store dashboard, client reports on `/client-report/{token}` | ✅ | `/?demo=agency` · My Clients tab |
 | Shopify **public-app approval kit** — GDPR webhooks, scopes, listing copy, CLI config | ✅ | `docs/SHOPIFY_APP_STORE_SUBMISSION.md` |
 
 ---
@@ -290,8 +293,6 @@ dashboard values, listing copy, pre-submission smoke test) lives in:
 - `docs/app-store/icon-ai-visibility.png` — 1024×1024 listing icon.
 
 ## Roadmap (next)
-- [ ] Weekly delta email report (mention-rate trends per query/engine)
-- [ ] Agency / white-label tier (multi-store dashboard + client reports)
 - [ ] Hindi UI + regional content (phase 2)
 - [ ] WooCommerce / standalone-site version
 - [ ] Per-plan feature-gating switches in `/admin/settings` (map to BillingService plans)

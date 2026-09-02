@@ -10,7 +10,8 @@ class Store extends Model
     protected $fillable = [
         'shop', 'shopify_token', 'scopes', 'plan', 'billing_id', 'billing_status',
         'trial_ends_at', 'billing_ends_at', 'domain', 'brand_name', 'currency',
-        'country', 'is_demo', 'tracking_enabled', 'settings',
+        'country', 'is_demo', 'tracking_enabled', 'parent_store_id', 'report_token',
+        'settings',
     ];
 
     protected $casts = [
@@ -23,6 +24,21 @@ class Store extends Model
 
     public function snapshots(): HasMany { return $this->hasMany(AiSnapshot::class); }
     public function brandSignalRuns(): HasMany { return $this->hasMany(BrandSignalRun::class); }
+    public function parentStore(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_store_id');
+    }
+
+    /** Client stores linked under this store (agency tier). */
+    public function clients(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_store_id');
+    }
+
+    public function isAgency(): bool
+    {
+        return $this->plan === 'agency';
+    }
     public function audits(): HasMany { return $this->hasMany(AuditRun::class); }
     public function queries(): HasMany { return $this->hasMany(TrackedQuery::class); }
     public function llmsEntries(): HasMany { return $this->hasMany(LlmsEntry::class); }

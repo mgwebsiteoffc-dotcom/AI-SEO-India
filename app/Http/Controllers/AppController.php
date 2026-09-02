@@ -11,11 +11,15 @@ class AppController extends Controller
     /** GET / → embedded admin app shell (SPA). */
     public function index(Request $request)
     {
-        $demo = $request->query('demo') === '1';
+        $demoVal = (string) $request->query('demo', '');
+        $demo = $demoVal !== '';
         $store = null;
 
         if ($demo) {
-            $store = Store::where('is_demo', true)->first();
+            // ?demo=1 → the standard demo store; ?demo=agency → the agency-tier demo
+            $store = $demoVal === 'agency'
+                ? Store::where('shop', 'demo-agency.myshopify.com')->first()
+                : Store::where('is_demo', true)->first();
         } else {
             $store = ShopifyService::sessionStore();
         }
@@ -31,6 +35,7 @@ class AppController extends Controller
         return view('app', [
             'store' => $store,
             'demo' => $demo,
+            'demoVal' => $demoVal,
             'apiKey' => config('shopify.api_key'),
             'host' => $request->query('host', ''),
             'shop' => $store->shop,

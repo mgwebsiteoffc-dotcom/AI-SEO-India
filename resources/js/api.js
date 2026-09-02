@@ -24,11 +24,11 @@ function sessionToken() {
 async function request(method, url, body = null) {
     const token = await sessionToken();
     const opts = { method, headers: { Accept: 'application/json' } };
-    // Demo mode: the JWT middleware resolves the demo store from the ?demo=1 flag.
+    // Demo mode: the JWT middleware resolves the demo store from the ?demo flag.
     if (window.demoMode && !url.includes('?')) {
-        url += '?demo=1';
+        url += '?demo=' + (window.demoValue || '1');
     } else if (window.demoMode) {
-        url += '&demo=1';
+        url += '&demo=' + (window.demoValue || '1');
     }
     if (token !== 'none') {
         opts.headers.Authorization = `Bearer ${token}`;

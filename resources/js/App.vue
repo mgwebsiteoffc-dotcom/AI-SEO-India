@@ -44,6 +44,7 @@
         <Dashboard v-if="tab === 'dashboard'" :data="data" @refresh="load" @goto="tab = $event" />
         <Audit v-else-if="tab === 'audit'" :initial="data" @audited="onAudited" @goto="tab = $event" />
         <BrandSignals v-else-if="tab === 'brand'" />
+        <Clients v-else-if="tab === 'clients'" />
         <Tracker v-else-if="tab === 'tracker'" />
         <Content v-else-if="tab === 'content'" />
         <Traffic v-else-if="tab === 'traffic'" />
@@ -57,12 +58,13 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { api } from './api';
 import Dashboard from './components/Dashboard.vue';
 import Audit from './components/Audit.vue';
-import Tracker from './components/Tracker.vue';
 import BrandSignals from './components/BrandSignals.vue';
+import Clients from './components/Clients.vue';
+import Tracker from './components/Tracker.vue';
 import Content from './components/Content.vue';
 import Traffic from './components/Traffic.vue';
 import Llms from './components/Llms.vue';
@@ -81,18 +83,27 @@ const store = reactive({
 });
 const data = reactive({ score: null, grade: null, trend: [], engines: [], store: {} });
 
-const tabs = [
-    { key: 'dashboard', label: 'Dashboard' },
-    { key: 'audit', label: 'AI Score & Audit' },
-    { key: 'brand', label: 'Brand Signals' },
-    { key: 'tracker', label: 'AI Visibility Tracker' },
-    { key: 'content', label: 'Smart Blogger' },
-    { key: 'traffic', label: 'AI Traffic & Orders' },
-    { key: 'llms', label: 'llms.txt' },
-    { key: 'schema', label: 'Schema Builder' },
-    { key: 'billing', label: 'Plans & Billing' },
-    { key: 'settings', label: 'Settings' },
-];
+const isAgency = computed(() => store.plan === 'agency');
+const tabs = computed(() => {
+    const list = [
+        { key: 'dashboard', label: 'Dashboard' },
+        { key: 'audit', label: 'AI Score & Audit' },
+        { key: 'brand', label: 'Brand Signals' },
+        { key: 'tracker', label: 'AI Visibility Tracker' },
+    ];
+    if (isAgency.value) {
+        list.push({ key: 'clients', label: 'My Clients' });
+    }
+    list.push(
+        { key: 'content', label: 'Smart Blogger' },
+        { key: 'traffic', label: 'AI Traffic & Orders' },
+        { key: 'llms', label: 'llms.txt' },
+        { key: 'schema', label: 'Schema Builder' },
+        { key: 'billing', label: 'Plans & Billing' },
+        { key: 'settings', label: 'Settings' },
+    );
+    return list;
+});
 
 async function load() {
     try {

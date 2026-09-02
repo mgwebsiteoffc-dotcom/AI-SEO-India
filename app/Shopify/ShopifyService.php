@@ -108,6 +108,10 @@ class ShopifyService
     public static function sessionStore(): ?Store
     {
         // Demo bypass — no Shopify credentials needed for local preview
+        // ?demo=1 → standard demo store; ?demo=agency → agency-tier demo
+        if (request()->query('demo') === 'agency') {
+            return Store::where('shop', 'demo-agency.myshopify.com')->first();
+        }
         if (request()->query('demo') === '1') {
             return Store::where('is_demo', true)->first();
         }
