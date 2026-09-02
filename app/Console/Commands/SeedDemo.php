@@ -121,6 +121,10 @@ class SeedDemo extends Command
 
         // Competitors
         $store->competitors()->delete();
+        // Mention rows carry their own (store_id, snapshot_date, engine,
+        // competitor_domain) unique key, so wipe them first or re-seeding the
+        // same day trips the constraint and aborts the whole command.
+        \App\Models\CompetitorMention::where('store_id', $store->id)->delete();
         Competitor::create(['store_id' => $store->id, 'name' => 'Minimalist', 'domain' => 'beminimalist.co']);
         Competitor::create(['store_id' => $store->id, 'name' => 'Plum', 'domain' => 'plumgoodness.com']);
         foreach ($store->competitors as $c) {
@@ -192,7 +196,7 @@ class SeedDemo extends Command
             ],
             [
                 'slug' => 'ai-seo-scorecard-what-it-measures',
-                'title' => 'Your AI SEO Scorecard: What It Measures (and What It Doesn&rsquo;t)',
+                'title' => 'Your AI SEO Scorecard: What It Measures (and What It Doesn’t)',
                 'meta_description' => 'What an AI Readiness Score actually checks — crawlability, schema, content, brand — and why nobody can guarantee AI rankings.',
                 'excerpt' => 'A scorecard is only useful if it measures real signals. Here is the honest breakdown of what moves the needle in AI visibility.',
                 'body' => '<p>Before paying for any &ldquo;AI SEO&rdquo; tool, understand what is measurable and what is marketing.</p><h2>The signals that actually matter</h2><ul><li><strong>Crawlability</strong> — robots.txt rules for GPTBot, OAI-SearchBot, ClaudeBot and PerplexityBot; a healthy sitemap.</li><li><strong>Structured data</strong> — Product, Offer (INR), FAQ and Organization JSON-LD that AI retrieval can parse directly.</li><li><strong>Content</strong> — H1s, descriptive titles, 300+ word product pages, FAQ blocks and comparison tables.</li><li><strong>Brand</strong> — name prominence, reviews and trust signals across the web.</li></ul><h2>What doesn&rsquo;t work</h2><p>As of 2026, no major AI engine has confirmed reading <code>llms.txt</code>, and large-scale studies show almost no citation lift from it. Treat it as cheap hygiene, not a strategy.</p><h2>Rankings can&rsquo;t be guaranteed</h2><p>Anyone promising &ldquo;rank #1 in ChatGPT&rdquo; is selling snake oil. AI visibility is a compounding outcome of real signals — measure it weekly and fix what the data says.</p>',
@@ -200,8 +204,8 @@ class SeedDemo extends Command
             [
                 'slug' => 'gemini-ai-overviews-d2c-traffic',
                 'title' => 'Gemini, AI Overviews and D2C Traffic: The 2026 Shift',
-                'meta_description' => 'Gemini referral traffic grew 388% in a year. What Indian D2C brands need to know about Google&rsquo;s AI surfaces.',
-                'excerpt' => 'ChatGPT still dominates AI referrals, but Gemini is the fastest riser — and it sits inside Google Search, Android and every Chrome user&rsquo;s pocket.',
+                'meta_description' => 'Gemini referral traffic grew 388% in a year. What Indian D2C brands need to know about Google’s AI surfaces.',
+                'excerpt' => 'ChatGPT still dominates AI referrals, but Gemini is the fastest riser — and it sits inside Google Search, Android and every Chrome user’s pocket.',
                 'body' => '<p>ChatGPT sends ~78% of AI referral traffic today, but Gemini&rsquo;s referral volume grew <strong>388% YoY</strong> — the fastest of any AI platform. For Indian D2C, Gemini matters more than any other market: it ships on Android, where over three-quarters of Indian ecommerce happens.</p><h2>AI Overviews changed the game</h2><p>Google&rsquo;s AI Overviews answer questions directly above the organic results. Being cited inside an AI Overview is the new &ldquo;position one&rdquo; — and it is built from the same index, so classic SEO hygiene plus structured data still wins.</p><h2>The Indian angle</h2><p>With 950M+ Gemini users globally and the highest learning usage in India, shopping queries in Hindi-English mixes are rising fast. Brands that publish bilingual FAQs and ₹-priced comparison tables position themselves for both Gemini and ChatGPT.</p><h2>Act now, measure monthly</h2><p>The window is open: most Indian D2C stores have zero AI visibility work done. Track your mention rate across ChatGPT, Gemini and Perplexity monthly, and compound the technical fixes. First-movers in AI search will be the default answers.</p>',
             ],
         ];
@@ -209,7 +213,79 @@ class SeedDemo extends Command
             Post::create($p + ['author' => 'AI Visibility Team', 'published_at' => now()->subDays(rand(2, 20))]);
         }
 
+        // ---- SaaS-owner demo: a handful of fictional tenant stores -----------
+        $tenants = [
+            ['shop' => 'vegan-d2c.myshopify.com',     'brand' => 'Vegan D2C Co',    'domain' => 'vegand2c.in',        'plan' => 'grow',   'billing' => 'active',    'created_days' => 96,  'trial' => false],
+            ['shop' => 'sundar-skincare.myshopify.com','brand' => 'Sundar Skincare', 'domain' => 'sundarskincare.in', 'plan' => 'scale',  'billing' => 'active',    'created_days' => 61,  'trial' => false],
+            ['shop' => 'glow-lab.myshopify.com',       'brand' => 'Glow Lab',        'domain' => null,                 'plan' => 'scale',  'billing' => 'active',    'created_days' => 44,  'trial' => false],
+            ['shop' => 'ayurveda-kart.myshopify.com',  'brand' => 'Ayurveda Kart',   'domain' => 'ayurvedakart.in',   'plan' => 'agency', 'billing' => 'active',    'created_days' => 30,  'trial' => false],
+            ['shop' => 'chai-cosmetics.myshopify.com', 'brand' => 'Chai Cosmetics',  'domain' => null,                 'plan' => 'grow',   'billing' => 'cancelled', 'created_days' => 120, 'trial' => false],
+            ['shop' => 'organic-hub.myshopify.com',    'brand' => 'Organic Hub',     'domain' => 'organichub.in',     'plan' => 'free',   'billing' => 'inactive',  'created_days' => 6,   'trial' => true],
+        ];
+        // Remove previous tenant demo rows (identified by shop) so re-seeds stay stable.
+        Store::whereIn('shop', array_column($tenants, 'shop'))->delete();
+        foreach ($tenants as $t) {
+            $s = Store::create([
+                'shop' => $t['shop'],
+                'brand_name' => $t['brand'],
+                'domain' => $t['domain'],
+                'plan' => $t['plan'],
+                'billing_status' => $t['billing'],
+                'currency' => 'INR',
+                'country' => 'IN',
+                'created_at' => now()->subDays($t['created_days']),
+                'updated_at' => now()->subDays($t['created_days']),
+            ]);
+            if ($t['billing'] === 'active') {
+                $s->forceFill(['billing_ends_at' => now()->addDays(rand(8, 28))])->save();
+            } elseif ($t['trial']) {
+                $s->forceFill(['trial_ends_at' => now()->addDays(3)])->save();
+            }
+        }
+
+        // ---- SaaS-owner demo: leads (only when the table is empty, so fresh
+        // scorecard signups made in this sandbox are never wiped) ------------
+        if (\App\Models\Lead::count() === 0) {
+            $sampleLeads = [
+                ['meera@vegankart.in', 'VeganKart', 'vegankart.in'],
+                ['rahul@dermacraft.in', 'DermaCraft', 'dermacraft.myshopify.com'],
+                ['priya.shah@botaniq.in', 'Botaniq', null],
+                ['arjun@thesunscreenco.in', 'The Sunscreen Co', 'thesunscreenco.in'],
+                ['neha@haircarehub.in', 'HairCare Hub', 'haircarehub.myshopify.com'],
+                ['karan@desi-grooming.in', 'Desi Grooming', 'desi-grooming.in'],
+                ['shreya@lipglow.in', 'LipGlow', null],
+                ['aisha@cleanbeauty.in', 'Clean Beauty India', 'cleanbeauty.in'],
+            ];
+            foreach ($sampleLeads as $i => [$email, $brand, $shopUrl]) {
+                \App\Models\Lead::create([
+                    'email' => $email, 'brand' => $brand, 'shop_url' => $shopUrl,
+                    'source' => ['scorecard', 'scorecard', 'pricing', 'scorecard', 'blog', 'scorecard', 'pricing', 'footer'][$i],
+                    'created_at' => now()->subDays(rand(1, 40)),
+                    'updated_at' => now()->subDays(rand(1, 40)),
+                ]);
+            }
+        }
+
+        // ---- SaaS-owner demo: a few webhook events --------------------------
+        if (\App\Models\WebhookCall::count() === 0) {
+            $topics = [
+                ['orders/paid', 'sundar-skincare.myshopify.com', 'processed'],
+                ['orders/paid', 'vegan-d2c.myshopify.com', 'processed'],
+                ['products/update', 'glow-lab.myshopify.com', 'processed'],
+                ['orders/paid', 'ayurveda-kart.myshopify.com', 'processed'],
+                ['app/uninstalled', 'chai-cosmetics.myshopify.com', 'processed'],
+            ];
+            foreach ($topics as $i => [$topic, $shop, $status]) {
+                \App\Models\WebhookCall::create([
+                    'topic' => $topic, 'shop' => $shop, 'status' => $status,
+                    'created_at' => now()->subDays($i + 1)->subHours(rand(1, 12)),
+                    'updated_at' => now()->subDays($i + 1)->subHours(rand(1, 12)),
+                ]);
+            }
+        }
+
         $this->info('Demo store seeded: demo-brand.myshopify.com (Aurelia Naturals)');
+        $this->info('SaaS owner demo: /admin (+ 6 tenant stores, '.(\App\Models\Lead::count()).' leads)');
         $this->info('Open: '.config('app.url').'/?demo=1  (or /auth/demo)');
         return self::SUCCESS;
     }

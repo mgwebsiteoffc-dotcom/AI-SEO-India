@@ -1,47 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AI SEO Blog for Indian D2C — AI Visibility</title>
-    <meta name="description" content="Guides on AI SEO, generative engine optimization and getting your Indian D2C brand recommended by ChatGPT, Gemini and Perplexity.">
-    @vite(['resources/css/app.css'])
-    <style>.hero-bg { background: linear-gradient(160deg, #0f172a 0%, #111c34 60%, #0f172a 100%); }</style>
+    @include('marketing.partials.head', [
+        'title' => 'AI SEO Blog for Indian D2C',
+        'description' => 'Guides on AI SEO, generative engine optimization and getting your Indian D2C brand recommended by ChatGPT, Gemini and Perplexity.',
+    ])
 </head>
-<body class="bg-slate-950 text-slate-100">
-    <header class="border-b border-white/10 bg-slate-950/80 backdrop-blur sticky top-0 z-40">
-        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="{{ route('home') }}" class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center font-extrabold text-white">AI</div>
-                <div class="font-bold">AI Visibility</div>
-            </a>
-            <a href="{{ route('scorecard') }}" class="btn-primary !bg-brand-500 !py-2 text-xs">Free AI Score</a>
-        </div>
-    </header>
+<body class="marketing">
+    @include('marketing.partials.header')
 
-    <section class="hero-bg">
-        <div class="max-w-4xl mx-auto px-4 pt-14 pb-8">
-            <h1 class="text-3xl md:text-4xl font-extrabold">The AI SEO blog for Indian D2C</h1>
-            <p class="text-slate-400 mt-3">Practical guides on getting recommended by ChatGPT, Gemini &amp; Perplexity — with data, not hype.</p>
+    <section class="hero-bg relative overflow-hidden">
+        <div class="grid-pattern absolute inset-0"></div>
+        <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-10">
+            <div class="pill">The AI SEO blog</div>
+            <h1 class="font-display mt-5 text-4xl md:text-5xl font-extrabold leading-tight">The <span class="grad-text">AI SEO blog</span> for Indian D2C</h1>
+            <p class="text-slate-400 mt-4 max-w-xl">Practical guides on getting recommended by ChatGPT, Gemini &amp; Perplexity — with data, not hype.</p>
         </div>
     </section>
 
-    <section class="pb-20">
+    <section class="pb-16">
         <div class="max-w-4xl mx-auto px-4 space-y-4">
             @forelse ($posts as $post)
-            <a href="{{ route('blog.show', $post->slug) }}" class="block rounded-2xl bg-slate-900 border border-white/10 p-6 hover:border-brand-500/50 transition-colors">
-                <div class="text-[11px] text-slate-500">{{ $post->published_at?->format('d M Y') }} · {{ $post->author }}</div>
-                <h2 class="font-bold text-lg mt-1.5">{{ $post->title }}</h2>
-                <p class="text-sm text-slate-400 mt-2">{{ $post->excerpt }}</p>
+            <a href="{{ route('blog.show', $post->slug) }}" class="card-dark card-dark-hover block p-6">
+                <div class="flex items-center gap-3 text-[11px] text-slate-500">
+                    <span>{{ $post->published_at?->format('d M Y') }}</span>
+                    <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                    <span>{{ $post->author }}</span>
+                </div>
+                <h2 class="font-display font-bold text-lg text-white mt-2 hover:text-brand-400 transition-colors">{{ $post->title }}</h2>
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">{{ $post->excerpt }}</p>
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-400 mt-4">
+                    Read article
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+                </span>
             </a>
             @empty
-            <p class="text-slate-500 text-sm">Articles coming soon.</p>
+            <p class="text-slate-500 text-sm py-10 text-center">Articles coming soon.</p>
             @endforelse
         </div>
     </section>
 
-    <footer class="border-t border-white/10 py-8 text-center text-xs text-slate-500">
-        <a href="{{ route('home') }}" class="hover:text-slate-300">← Back to home</a> · <a href="{{ route('pricing') }}" class="hover:text-slate-300">Pricing</a>
-    </footer>
+    @include('marketing.partials.footer')
 </body>
 </html>

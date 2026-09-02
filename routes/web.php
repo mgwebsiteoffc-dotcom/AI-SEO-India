@@ -16,17 +16,37 @@ use Illuminate\Support\Facades\Route;
 Route::get('/health', [HealthController::class, 'index']);
 
 // OAuth
-Route::get('/auth/install', [AuthController::class, 'install']);
+Route::get('/auth/install', [AuthController::class, 'install'])->name('auth.install');
 Route::get('/auth/callback', [AuthController::class, 'callback']);
-Route::get('/auth/demo', [AuthController::class, 'demo']);
+Route::get('/auth/demo', [AuthController::class, 'demo'])->name('auth.demo');
 
 // Public marketing website
 Route::get('/', [MarketingController::class, 'home'])->name('home');
 Route::get('/pricing', [MarketingController::class, 'pricing'])->name('pricing');
 Route::get('/scorecard', [MarketingController::class, 'scorecard'])->name('scorecard');
+Route::post('/scorecard/run', [MarketingController::class, 'runScorecard'])->name('scorecard.run');
 Route::post('/lead', [MarketingController::class, 'captureLead'])->name('lead');
+Route::get('/features', [MarketingController::class, 'features'])->name('features');
+Route::get('/how-it-works', [MarketingController::class, 'howItWorks'])->name('how-it-works');
+Route::get('/faq', [MarketingController::class, 'faq'])->name('faq');
+Route::get('/install', [MarketingController::class, 'install'])->name('install');
+Route::get('/demo-store', [MarketingController::class, 'demoStore'])->name('demo-store');
 Route::get('/blog', [MarketingController::class, 'blog'])->name('blog');
 Route::get('/blog/{slug}', [MarketingController::class, 'blogShow'])->name('blog.show');
+Route::get('/privacy', [MarketingController::class, 'privacy'])->name('privacy');
+Route::get('/terms', [MarketingController::class, 'terms'])->name('terms');
+
+// SaaS-owner (super admin) panel — demo/local preview open, production gated
+// behind ADMIN_EMAIL / ADMIN_PASSWORD HTTP basic auth.
+Route::prefix('admin')->middleware('admin.guard')->group(function () {
+    Route::get('/', [\App\Http\Controllers\AdminController::class, 'overview'])->name('admin.overview');
+    Route::get('/stores', [\App\Http\Controllers\AdminController::class, 'stores'])->name('admin.stores');
+    Route::get('/leads', [\App\Http\Controllers\AdminController::class, 'leads'])->name('admin.leads');
+    Route::get('/activity', [\App\Http\Controllers\AdminController::class, 'activity'])->name('admin.activity');
+    Route::post('/stores/{store}/plan', [\App\Http\Controllers\AdminController::class, 'updatePlan'])->name('admin.store.plan');
+    Route::post('/stores/{store}/delete', [\App\Http\Controllers\AdminController::class, 'deleteStore'])->name('admin.store.delete');
+    Route::post('/leads/{lead}/delete', [\App\Http\Controllers\AdminController::class, 'deleteLead'])->name('admin.lead.delete');
+});
 
 // Embedded app shell (session OR demo)
 Route::get('/app', [AppController::class, 'index'])->name('app');

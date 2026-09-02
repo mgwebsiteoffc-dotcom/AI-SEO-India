@@ -10,4 +10,7 @@ return [
     'api_version' => env('SHOPIFY_API_VERSION', '2025-04'),
     'host' => env('SHOPIFY_APP_HOST_NAME', '127.0.0.1:8123'),
     'proxy_prefix' => env('SHOPIFY_APP_PROXY_PREFIX', 'apps/ai-visibility'),
+    // Public Shopify App Store listing URL (optional; shown as the install CTA
+    // on the marketing site once the app is published).
+    'app_store_url' => env('SHOPIFY_APP_STORE_URL', ''),
 ];
