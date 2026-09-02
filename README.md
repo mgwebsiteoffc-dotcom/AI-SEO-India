@@ -10,6 +10,52 @@ priced in INR (Free / ₹999 / ₹1,999 / ₹4,999 per month, monthly or annual)
 
 ---
 
+## Run it locally (Laragon / XAMPP / `php artisan serve`)
+
+> **Use the latest code first:** `git pull` (this repo's `main` now contains the full
+> site — merged from `arena/01a05cd6-ai-seo-india`). If you only see the default
+> Laravel welcome page, you are on old code.
+
+1. **PHP 8.3+** — Laragon: *Menu → PHP → 8.3.x* (8.2 won't install dependencies).
+2. `composer install`
+3. Create `.env`: `copy .env.example .env`, then pick a database:
+   - **SQLite (easiest, no server needed):**
+     ```env
+     DB_CONNECTION=sqlite
+     ```
+     then `type nul > database\database.sqlite` (Windows) / `touch database/database.sqlite` (mac/Linux)
+   - **MySQL (Laragon default):** create a database in Laragon, then in `.env`:
+     ```env
+     DB_CONNECTION=mysql
+     DB_HOST=127.0.0.1
+     DB_PORT=3306
+     DB_DATABASE=ai_visibility
+     DB_USERNAME=root
+     DB_PASSWORD=
+     ```
+4. `php artisan key:generate`
+5. `php artisan migrate --force`
+6. `php artisan demo:seed` — demo store + blog posts + owner-panel demo data
+7. `npm install && npm run build` — **required or every page renders unstyled**
+8. `php artisan serve` → open **http://127.0.0.1:8000**
+
+Pages to check: `/` · `/pricing` · `/features` · `/how-it-works` · `/faq` · `/scorecard`
+(live scan) · `/install` · `/demo-store` · `/blog` · `/admin` (owner panel) ·
+`/app?demo=1` (the app).
+
+**Common issues**
+- *Only the landing page works / rest 404* → you're on an old `main`; `git pull`.
+- *Pages render but have no styling* → `npm run build` wasn't run.
+- *500 errors on any page* → missing `.env` / `APP_KEY` (`php artisan key:generate`) or the database wasn't migrated.
+- *Shopify features say "not connected"* → expected locally; real install needs Partner
+  credentials. Use `/install` → **Install demo store**, or `/app?demo=1`.
+
+> Note: `127.0.0.1:8123` is only the hosted preview sandbox's internal port — your
+> browser cannot reach it. Use the public preview URL provided in the sandbox, or run
+> locally on `127.0.0.1:8000` as above.
+
+---
+
 ## Feature map (everything from the plan, built)
 
 | Feature | Status | Where |
