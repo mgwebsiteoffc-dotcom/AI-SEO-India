@@ -1,19 +1,13 @@
 <?php
 
 return [
+    // Super-admin (SaaS owner) account — seeded by AdminSeeder / demo:seed.
+    // Always override the password via ADMIN_PASSWORD in production.
+    'email' => env('ADMIN_EMAIL', 'owner@aivisibility.app'),
+    'password' => env('ADMIN_PASSWORD', 'aivisibility-demo'),
+    'name' => env('ADMIN_NAME', 'SaaS Owner'),
 
-    /*
-    |--------------------------------------------------------------------------
-    | SaaS-owner (super admin) area credentials
-    |--------------------------------------------------------------------------
-    |
-    | HTTP Basic credentials guarding /admin in production. When both are left
-    | empty in a non-production environment the admin area stays open so the
-    | panel can be previewed in demo / local sandboxes.
-    */
-
-    'email' => env('ADMIN_EMAIL', ''),
-
-    'password' => env('ADMIN_PASSWORD', ''),
-
+    // Set true to never echo demo credentials on the login page even in
+    // local/demo environments (checked at runtime, not in this file).
+    'hide_demo_hint' => env('ADMIN_HIDE_DEMO_HINT', false),
 ];

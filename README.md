@@ -40,8 +40,14 @@ priced in INR (Free / ₹999 / ₹1,999 / ₹4,999 per month, monthly or annual)
 8. `php artisan serve` → open **http://127.0.0.1:8000**
 
 Pages to check: `/` · `/pricing` · `/features` · `/how-it-works` · `/faq` · `/scorecard`
-(live scan) · `/install` · `/demo-store` · `/blog` · `/admin` (owner panel, incl.
-**`/admin/settings`** — engine toggles, scheduler, plan prices) · `/app?demo=1` (the app).
+(live scan) · `/install` · `/demo-store` · `/blog` · `/app?demo=1` (the app).
+
+**SaaS-owner panel (`/admin`)** — sign in with email + password. The super-admin
+account is created by `php artisan demo:seed` or `php artisan db:seed --class=AdminSeeder`
+and reads `ADMIN_EMAIL` / `ADMIN_PASSWORD` (`.env`, defaults `owner@aivisibility.app` /
+`aivisibility-demo` — change in production). Owner features live at
+**`/admin/blog`** (SEO/AEO blog manager), **`/admin/stores`**, **`/admin/leads`**,
+**`/admin/settings`** (engine toggles, scheduler, plan prices), **`/admin/activity`**.
 
 **Common issues**
 - *Only the landing page works / rest 404* → you're on an old `main`; `git pull`.

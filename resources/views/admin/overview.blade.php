@@ -11,15 +11,18 @@
                 <h1 class="font-display text-2xl font-extrabold text-white">Business at a glance</h1>
                 <p class="text-sm text-slate-400 mt-1">MRR below = active recurring subscriptions × plan price (INR).</p>
             </div>
-            <a href="{{ route('admin.stores') }}" class="btn-primary !py-2 text-xs">Manage stores →</a>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('admin.blog.create') }}" class="btn !py-2 text-xs">✍️ New blog article</a>
+                <a href="{{ route('admin.stores') }}" class="btn-primary !py-2 text-xs">Manage stores →</a>
+            </div>
         </div>
 
         @php
             $cards = [
                 ['label' => 'Stores', 'value' => number_format($kpis['stores']), 'hint' => 'all tenants', 'icon' => '🏪'],
                 ['label' => 'Monthly revenue', 'value' => '₹'.number_format($kpis['mrr']), 'hint' => 'ARR ₹'.number_format($kpis['arr']), 'icon' => '₹'],
-                ['label' => 'Leads', 'value' => number_format($kpis['leads']), 'hint' => 'scorecard signups', 'icon' => '✉️'],
-                ['label' => 'Blog posts', 'value' => number_format($kpis['posts']), 'hint' => 'founder content', 'icon' => '📝'],
+                ['label' => 'Leads', 'value' => number_format($kpis['leads']), 'hint' => 'scorecard signups', 'icon' => '✉️', 'link' => 'admin.leads'],
+                ['label' => 'Blog posts', 'value' => number_format($kpis['posts']), 'hint' => 'founder content', 'icon' => '📝', 'link' => 'admin.blog'],
                 ['label' => 'Content generated', 'value' => number_format($kpis['content_posts']), 'hint' => 'Smart Blogger articles', 'icon' => '🤖'],
                 ['label' => 'Audits run', 'value' => number_format($kpis['audits']), 'hint' => 'AI Readiness scans', 'icon' => '📊'],
                 ['label' => 'Tracked queries', 'value' => number_format($kpis['tracked_queries']), 'hint' => 'visibility watch', 'icon' => '👁️'],
@@ -28,11 +31,19 @@
         @endphp
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             @foreach ($cards as $c)
-                <div class="glass rounded-2xl p-4">
-                    <div class="text-[11px] uppercase tracking-wider text-slate-500 font-semibold flex items-center gap-1.5">{{ $c['icon'] }} {{ $c['label'] }}</div>
-                    <div class="font-display text-2xl font-extrabold text-white mt-1.5">{{ $c['value'] }}</div>
-                    <div class="text-[11px] text-slate-500 mt-0.5">{{ $c['hint'] }}</div>
-                </div>
+                @if (isset($c['link']))
+                    <a href="{{ route($c['link']) }}" class="glass rounded-2xl p-4 transition-colors hover:border-brand-500/40 hover:bg-brand-500/[0.06] block">
+                        <div class="text-[11px] uppercase tracking-wider text-slate-500 font-semibold flex items-center gap-1.5">{{ $c['icon'] }} {{ $c['label'] }}</div>
+                        <div class="font-display text-2xl font-extrabold text-white mt-1.5">{{ $c['value'] }}</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5">{{ $c['hint'] }}</div>
+                    </a>
+                @else
+                    <div class="glass rounded-2xl p-4">
+                        <div class="text-[11px] uppercase tracking-wider text-slate-500 font-semibold flex items-center gap-1.5">{{ $c['icon'] }} {{ $c['label'] }}</div>
+                        <div class="font-display text-2xl font-extrabold text-white mt-1.5">{{ $c['value'] }}</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5">{{ $c['hint'] }}</div>
+                    </div>
+                @endif
             @endforeach
         </div>
 

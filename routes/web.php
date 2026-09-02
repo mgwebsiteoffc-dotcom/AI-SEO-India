@@ -39,9 +39,13 @@ Route::get('/blog/{slug}', [MarketingController::class, 'blogShow'])->name('blog
 Route::get('/privacy', [MarketingController::class, 'privacy'])->name('privacy');
 Route::get('/terms', [MarketingController::class, 'terms'])->name('terms');
 
-// SaaS-owner (super admin) panel — demo/local preview open, production gated
-// behind ADMIN_EMAIL / ADMIN_PASSWORD HTTP basic auth.
+// SaaS-owner (super admin) panel — email + password session login.
+// Seed the account with: php artisan db:seed --class=AdminSeeder
+Route::get('/admin/login', [\App\Http\Controllers\AdminAuthController::class, 'showLogin'])->name('admin.login');
+Route::post('/admin/login', [\App\Http\Controllers\AdminAuthController::class, 'login'])->name('admin.login.submit');
+
 Route::prefix('admin')->middleware('admin.guard')->group(function () {
+    Route::post('/logout', [\App\Http\Controllers\AdminAuthController::class, 'logout'])->name('admin.logout');
     Route::get('/', [\App\Http\Controllers\AdminController::class, 'overview'])->name('admin.overview');
     Route::get('/stores', [\App\Http\Controllers\AdminController::class, 'stores'])->name('admin.stores');
     Route::get('/leads', [\App\Http\Controllers\AdminController::class, 'leads'])->name('admin.leads');

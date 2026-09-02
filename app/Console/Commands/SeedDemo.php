@@ -22,6 +22,16 @@ class SeedDemo extends Command
 
     public function handle(): int
     {
+        // SaaS-owner super admin (email + password for /admin).
+        \App\Models\Admin::updateOrCreate(
+            ['email' => config('admin.email')],
+            [
+                'name' => config('admin.name'),
+                'role' => 'super_admin',
+                'password' => \Illuminate\Support\Facades\Hash::make(config('admin.password')),
+            ]
+        );
+
         $store = Store::updateOrCreate(
             ['shop' => 'demo-brand.myshopify.com'],
             [
