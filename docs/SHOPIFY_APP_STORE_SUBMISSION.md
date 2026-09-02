@@ -89,8 +89,8 @@ which satisfies "acknowledge within seconds".
 |---|---|---|
 | App icon | Square PNG ≥ 200×200 (we ship 1024) | `docs/app-store/icon-ai-visibility.png` |
 | Store card logo (optional) | 512×512 PNG | reuse icon |
-| Screenshots | 1280×800 (up to 20) | take real ones from the installed app (see §9) |
-| Demo video (optional) | ≤ 4 min | — |
+| Screenshots | 1280×800 (up to 20) | **Draft mockups**: `docs/app-store/listing/*.png` (6). Replace each with a real capture before submit (see §9 + §11). |
+| Demo video (optional) | ≤ 4 min | spec in `docs/APP-STORE-LISTING-COPY.md` §6 |
 | Listing copy | — | `docs/APP-STORE-LISTING-COPY.md` |
 
 ## 8. Listing copy & data-usage answers
@@ -127,3 +127,38 @@ shopify app deploy --path .          # installs theme app extension for reviewer
 - [ ] No hard-coded secrets/keys in the repo or screenshots
 - [ ] Support email in the Partner dashboard is monitored
 - [ ] App Store listing published as **Public** and submitted for review
+
+## 11. One-pass review kit (run the morning you submit)
+
+Order matters — do 11.1 → 11.8, then hit submit.
+
+1. **Deploy + CLI:** `shopify app deploy --path .` (installs the theme app
+   extension reviewers use) and push the latest code to the public HTTPS host.
+2. **Fresh dev-store install:** create a new dev store in Partners → install →
+   watch for console errors in the embedded admin; run one audit + one IndexNow
+   flush + one Smart Blogger publish.
+3. **Real screenshots:** capture the 6 screens listed in
+   `docs/APP-STORE-LISTING-COPY.md` §6 from that dev store, crop to 1280×800,
+   drop them over the drafts in `docs/app-store/listing/`.
+4. **Secrets scan:** `grep -RInE "(api[_-]?key|secret|password|token)\s*[:=]\s*[\"']" --exclude-dir=vendor --exclude-dir=node_modules .`
+   — nothing real may remain; env-only values are fine.
+5. **Legal URLs:** load `/privacy` and `/terms` on the public domain, no login,
+   and confirm both URLs are pasted into the Partner dashboard.
+6. **Pricing sync:** listing plan prices == app `/api/billing/plans` values
+   (Free/Grow ₹999/Scale ₹1,999/Agency ₹4,999, annual 10×) ==
+   `/admin/settings` price fields.
+7. **Support inbox:** reply-to address is monitored (Shopify emails the
+   merchant-facing support contact during review).
+8. **Submit notes:** include the dev-store URL + a 2-line summary of how the
+   app is verified (fresh install → audit → schema → publish → proxy files).
+
+**Common one-pass rejections we have pre-empted:**
+- *Claimed features not present / misleading screenshots* → listing copy §4 is
+  generated from implemented features; screenshots must be real (step 3).
+- *Broken install/console errors* → step 2 before every submission.
+- *Missing GDPR webhooks* → §4 registered + handlers tested.
+- *Scope creep* → §3 minimal scope list, no unused scopes.
+- *Logins/password walls inside the iframe* → OAuth-first; merchant has no app
+  account; owner login lives only at `/admin` outside the app.
+- *Pricing mismatch between listing and app* → step 6.
+- *Unclear data usage* → §7 text is the exact answer to paste.
