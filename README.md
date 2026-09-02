@@ -49,6 +49,18 @@ and reads `ADMIN_EMAIL` / `ADMIN_PASSWORD` (`.env`, defaults `owner@aivisibility
 **`/admin/blog`** (SEO/AEO blog manager), **`/admin/stores`**, **`/admin/leads`**,
 **`/admin/settings`** (engine toggles, scheduler, plan prices), **`/admin/activity`**.
 
+> **After pulling newer code** (login routes + `AdminSeeder` are new), run once:
+> ```bash
+> composer dump-autoload          # makes Database\Seeders\AdminSeeder resolvable
+> php artisan optimize:clear      # drops stale route/config/view caches → /admin/login 404 fix
+> php artisan migrate             # creates the admins table
+> php artisan db:seed --class=AdminSeeder
+> ```
+> If the login screen says "admin store is not ready", the same migrate+seed pair
+> is what's missing. (`Database\Seeders` is a dev-autoload namespace in stock
+> Laravel; this repo keeps it in the main autoload so the seeder works even when
+> Composer is installed with `--no-dev` — just re-dump after pulling.)
+
 **Common issues**
 - *Only the landing page works / rest 404* → you're on an old `main`; `git pull`.
 - *Pages render but have no styling* → `npm run build` wasn't run.

@@ -25,7 +25,17 @@ class AdminAuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
+        try {
+            $ok = Auth::guard('admin')->attempt($credentials, $request->boolean('remember'));
+        } catch (\Throwable $e) {
+            Log::error('Super-admin login DB error: '.$e->getMessage());
+
+            return back()->withErrors([
+                'email' => 'The admin store is not ready yet. Run: php artisan migrate && php artisan db:seed --class=AdminSeeder',
+            ])->onlyInput('email');
+        }
+
+        if ($ok) {
             $request->session()->regenerate();
             Log::info('Super-admin login: '.$credentials['email'].' from '.$request->ip());
 
