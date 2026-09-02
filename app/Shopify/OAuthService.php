@@ -56,6 +56,10 @@ class OAuthService
             Topics::APP_UNINSTALLED => "/webhooks/app/uninstalled",
             Topics::PRODUCTS_UPDATE => "/webhooks/products/update",
             Topics::ORDERS_PAID => "/webhooks/orders/paid",
+            // Mandatory GDPR webhooks for every public app (approval checklist).
+            Topics::CUSTOMERS_DATA_REQUEST => "/webhooks/customers/data_request",
+            Topics::CUSTOMERS_REDACT => "/webhooks/customers/redact",
+            Topics::SHOP_REDACT => "/webhooks/shop/redact",
         ];
         foreach ($topics as $topic => $path) {
             try {

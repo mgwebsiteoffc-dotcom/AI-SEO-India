@@ -49,7 +49,18 @@
                             <td class="px-4 py-3 text-[11px] text-slate-400">
                                 {{ $s->audits_count }} audits · {{ $s->content_posts_count }} posts · {{ $s->queries_count }} queries
                             </td>
-                            <td class="px-4 py-3 text-[11px] text-slate-500">{{ $s->created_at->format('d M Y') }}</td>
+                            <td class="px-4 py-3">
+                                <div class="text-[11px] text-slate-500">{{ $s->created_at->format('d M Y') }}</div>
+                                @if (!$s->is_demo)
+                                    <form method="POST" action="{{ route('admin.store.tracking', $s) }}" class="mt-1.5">
+                                        @csrf
+                                        <button class="text-[10px] font-semibold {{ $s->tracking_enabled ? 'text-emerald-400 hover:text-emerald-300' : 'text-slate-500 hover:text-slate-400' }}"
+                                                title="{{ $s->tracking_enabled ? 'Click to pause daily snapshots' : 'Click to resume daily snapshots' }}">
+                                            {{ $s->tracking_enabled ? '● tracking on' : '○ tracking paused' }}
+                                        </button>
+                                    </form>
+                                @endif
+                            </td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-end gap-2">
                                     @if ($s->is_demo)

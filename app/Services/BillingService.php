@@ -8,11 +8,23 @@ use Illuminate\Support\Facades\Log;
 
 class BillingService
 {
+    /** Default plans; monthly prices can be overridden by the SaaS owner in /admin/settings. */
     public const PLANS = [
         'grow'  => ['name' => 'Grow',  'price' => 999,  'interval' => 'EVERY_30_DAYS'],
         'scale' => ['name' => 'Scale', 'price' => 1999, 'interval' => 'EVERY_30_DAYS'],
         'agency'=> ['name' => 'Agency','price' => 4999, 'interval' => 'EVERY_30_DAYS'],
     ];
+
+    /** Effective monthly prices (INR) — SaaS-owner overrides win. */
+    public static function price(string $plan): int
+    {
+        return app(\App\Services\SaasSettingsService::class)->planPrice($plan);
+    }
+
+    public static function planName(string $plan): string
+    {
+        return self::PLANS[$plan]['name'] ?? ucfirst($plan);
+    }
 
     /**
      * Create a recurring app subscription; returns confirmation URL.
@@ -40,7 +52,8 @@ class BillingService
         try {
             $client = ShopifyService::client($store);
             $intervalCode = $interval === 'annual' ? 'EVERY_12_MONTHS' : 'EVERY_30_DAYS';
-            $price = $interval === 'annual' ? round($planDef['price'] * 10) : $planDef['price'];
+            $monthly = self::price($plan);
+            $price = $interval === 'annual' ? round($monthly * 10) : $monthly;
             $returnUrl = rtrim(config('app.url'), '/')."/billing/callback?plan={$plan}&interval={$interval}&shop={$store->shop}";
             $query = <<<'GRAPHQL'
             mutation AppSubscriptionCreate($name: String!, $returnUrl: URL!, $lineItems: [AppSubscriptionLineItemInput!]!) {
@@ -54,7 +67,7 @@ class BillingService
             $res = $client->query([
                 'query' => $query,
                 'variables' => [
-                    'name' => 'AI Visibility '.$planDef['name'].' ('.($interval === 'annual' ? 'Annual' : 'Monthly').')',
+                    'name' => 'AI Visibility '.self::planName($plan).' ('.($interval === 'annual' ? 'Annual' : 'Monthly').')',
                     'returnUrl' => $returnUrl,
                     'lineItems' => [[
                         'plan' => [
@@ -84,7 +97,8 @@ class BillingService
     {
         $planDef = self::PLANS[$plan] ?? null;
         $days = $interval === 'annual' ? 365 : 30;
-        $price = $planDef && $interval === 'annual' ? round($planDef['price'] * 10) : ($planDef['price'] ?? 0);
+        $monthly = self::price($plan);
+        $price = $planDef && $interval === 'annual' ? round($monthly * 10) : $monthly;
         $store->update([
             'plan' => $plan,
             'billing_status' => 'active',
@@ -94,7 +108,7 @@ class BillingService
             \App\Models\AppBilling::create([
                 'store_id' => $store->id,
                 'plan' => $plan,
-                'amount' => $price,
+                'amount' => self::price($plan),
                 'charge_type' => 'recurring',
                 'charge_status' => 'active',
                 'activated_at' => now(),

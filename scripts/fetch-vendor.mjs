@@ -21,7 +21,9 @@ fs.mkdirSync(cacheDir, { recursive: true });
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
 const authHeader = token ? ['-H', `Authorization: Bearer ${token}`] : [];
 
-const packages = lock.packages; // runtime only (skip packages-dev)
+// Runtime only by default; pass --dev to also fetch packages-dev (needed for phpunit).
+const wantDev = process.argv.includes('--dev');
+const packages = wantDev ? lock.packages.concat(lock['packages-dev'] || []) : lock.packages;
 
 async function curl(url, outFile) {
   const args = ['-sSL', '--retry', '2', '--max-time', '120', ...authHeader, '-o', outFile, url];

@@ -43,8 +43,14 @@ Route::prefix('admin')->middleware('admin.guard')->group(function () {
     Route::get('/stores', [\App\Http\Controllers\AdminController::class, 'stores'])->name('admin.stores');
     Route::get('/leads', [\App\Http\Controllers\AdminController::class, 'leads'])->name('admin.leads');
     Route::get('/activity', [\App\Http\Controllers\AdminController::class, 'activity'])->name('admin.activity');
+    Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('admin.settings');
+    Route::post('/settings/engines', [\App\Http\Controllers\AdminController::class, 'saveSettingsEngines'])->name('admin.settings.engines');
+    Route::post('/settings/tracking', [\App\Http\Controllers\AdminController::class, 'saveSettingsTracking'])->name('admin.settings.tracking');
+    Route::post('/settings/billing', [\App\Http\Controllers\AdminController::class, 'saveSettingsBilling'])->name('admin.settings.billing');
+    Route::post('/settings/run', [\App\Http\Controllers\AdminController::class, 'runTracking'])->name('admin.settings.run');
     Route::post('/stores/{store}/plan', [\App\Http\Controllers\AdminController::class, 'updatePlan'])->name('admin.store.plan');
     Route::post('/stores/{store}/delete', [\App\Http\Controllers\AdminController::class, 'deleteStore'])->name('admin.store.delete');
+    Route::post('/stores/{store}/toggle-tracking', [\App\Http\Controllers\AdminController::class, 'toggleStoreTracking'])->name('admin.store.tracking');
     Route::post('/leads/{lead}/delete', [\App\Http\Controllers\AdminController::class, 'deleteLead'])->name('admin.lead.delete');
 });
 

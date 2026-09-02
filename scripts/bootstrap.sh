@@ -20,15 +20,15 @@ cd "$(dirname "$0")/.."
 DO_BUILD=1
 [[ "${1:-}" == "--no-build" ]] && DO_BUILD=0
 
-echo "▸ PHP runtime"
+echo "▸ Frontend dependencies (npm ci — must run before the no-save php-wasm install)"
+npm ci --no-audit --no-fund >/dev/null
+
+echo "▸ PHP runtime (php-wasm, installed without --save so npm ci doesn't remove it)"
 if [[ ! -x node_modules/.bin/php-wasm-cli ]]; then
   npm install --no-save --no-audit --no-fund @php-wasm/cli@3.1.52 >/dev/null
 fi
 PHP="$(pwd)/node_modules/.bin/php-wasm-cli"
 "$PHP" -v | head -1
-
-echo "▸ Frontend dependencies (npm ci)"
-npm ci --no-audit --no-fund >/dev/null
 
 echo "▸ Composer packages → vendor/ (GitHub zipballs, see fetch-vendor.mjs)"
 node scripts/fetch-vendor.mjs

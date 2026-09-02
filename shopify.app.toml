@@ -1,0 +1,47 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# shopify.app.toml — Shopify CLI app configuration for `shopify app deploy`.
+#
+# Values marked {{env.X}} are interpolated by the Shopify CLI from environment
+# variables at deploy time. Export them before deploying, e.g.:
+#
+#   export SHOPIFY_API_KEY="<client id from partners.shopify.com>"
+#   export SHOPIFY_API_SECRET="<client secret>"
+#   export SHOPIFY_APP_HOST_NAME="your-app-domain.com"
+#   shopify app deploy --path .
+#
+# The theme app extension under extensions/theme-app-extension is included
+# automatically (see extensions/theme-app-extension/shopify.extension.toml).
+# ─────────────────────────────────────────────────────────────────────────────
+
+name = "AI Visibility"
+client_id = "{{env.SHOPIFY_API_KEY}}"
+application_url = "https://{{env.SHOPIFY_APP_HOST_NAME}}"
+embedded = true
+
+[access_scopes]
+# Only scopes the code actually calls — reviewed against the public-app
+# guideline "request the minimum scopes needed" (see docs/SHOPIFY_APP_STORE_SUBMISSION.md).
+scopes = "read_products,write_products,read_orders,read_themes,write_themes,read_content,write_content"
+
+[webhooks]
+api_version = "2025-04"
+
+# GDPR webhooks — mandatory for public apps. Handlers live in app/Webhooks/*.
+[webhooks.privacy_compliance]
+customer_data_request_url = "https://{{env.SHOPIFY_APP_HOST_NAME}}/webhooks/customers/data_request"
+customer_deletion_url = "https://{{env.SHOPIFY_APP_HOST_NAME}}/webhooks/customers/redact"
+shop_deletion_url = "https://{{env.SHOPIFY_APP_HOST_NAME}}/webhooks/shop/redact"
+
+# Business webhooks (also registered per-store during OAuth so existing
+# installs stay in sync).
+[[webhooks.subscriptions]]
+topics = [ "app/uninstalled" ]
+uri = "https://{{env.SHOPIFY_APP_HOST_NAME}}/webhooks/app/uninstalled"
+
+[[webhooks.subscriptions]]
+topics = [ "products/update" ]
+uri = "https://{{env.SHOPIFY_APP_HOST_NAME}}/webhooks/products/update"
+
+[[webhooks.subscriptions]]
+topics = [ "orders/paid" ]
+uri = "https://{{env.SHOPIFY_APP_HOST_NAME}}/webhooks/orders/paid"

@@ -10,12 +10,13 @@ class Store extends Model
     protected $fillable = [
         'shop', 'shopify_token', 'scopes', 'plan', 'billing_id', 'billing_status',
         'trial_ends_at', 'billing_ends_at', 'domain', 'brand_name', 'currency',
-        'country', 'is_demo', 'settings',
+        'country', 'is_demo', 'tracking_enabled', 'settings',
     ];
 
     protected $casts = [
         'settings' => 'array',
         'is_demo' => 'boolean',
+        'tracking_enabled' => 'boolean',
         'trial_ends_at' => 'datetime',
         'billing_ends_at' => 'datetime',
     ];

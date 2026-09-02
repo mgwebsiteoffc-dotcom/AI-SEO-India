@@ -40,8 +40,8 @@ priced in INR (Free / ₹999 / ₹1,999 / ₹4,999 per month, monthly or annual)
 8. `php artisan serve` → open **http://127.0.0.1:8000**
 
 Pages to check: `/` · `/pricing` · `/features` · `/how-it-works` · `/faq` · `/scorecard`
-(live scan) · `/install` · `/demo-store` · `/blog` · `/admin` (owner panel) ·
-`/app?demo=1` (the app).
+(live scan) · `/install` · `/demo-store` · `/blog` · `/admin` (owner panel, incl.
+**`/admin/settings`** — engine toggles, scheduler, plan prices) · `/app?demo=1` (the app).
 
 **Common issues**
 - *Only the landing page works / rest 404* → you're on an old `main`; `git pull`.
@@ -75,6 +75,9 @@ Pages to check: `/` · `/pricing` · `/features` · `/how-it-works` · `/faq` ·
 | Lead capture (free scorecard email) | ✅ | `/scorecard` |
 | Founder blog with BlogPosting JSON-LD | ✅ | `/blog` |
 | Demo mode (no Shopify needed) | ✅ | `/?demo=1` |
+| **SaaS owner panel** — stores, plans, MRR, leads, activity | ✅ | `/admin` |
+| **Owner settings** — toggle AI engines, tracker schedule, plan prices, run now | ✅ | `/admin/settings` |
+| Shopify **public-app approval kit** — GDPR webhooks, scopes, listing copy, CLI config | ✅ | `docs/SHOPIFY_APP_STORE_SUBMISSION.md` |
 
 ---
 
@@ -152,7 +155,8 @@ Public web (no session)                    / (landing) /pricing /scorecard /blog
 3. App setup: App URL `https://your-domain.com/`, redirect `https://your-domain.com/auth/callback`,
    App Proxy subpath `apps/ai-visibility` → `https://your-domain.com/apps/ai-visibility`,
    embedded ON, webhook delivery `https://your-domain.com/webhooks`.
-4. Scopes: `read_products, write_products, read_orders, read_themes, write_themes, read_customers, read_locations, read_analytics`.
+4. Scopes (minimum set the code actually calls — see `docs/SHOPIFY_APP_STORE_SUBMISSION.md` for the justification map):
+   `read_products, write_products, read_orders, read_themes, write_themes, read_content, write_content`.
 
 ### 2. Deploy
 - Any PHP 8.2+ host with MySQL; public **HTTPS** mandatory.
@@ -270,8 +274,18 @@ routes/web.php            all routes (public, OAuth, API, proxy, webhooks, billi
 - Free-tier ChatGPT visits may arrive without referrer (show as Direct in GA4); the
   webhook attribution catches many of those anyway.
 
+## Shopify public-app submission guide
+
+Everything the review team needs (scope justification, GDPR handlers, Partner
+dashboard values, listing copy, pre-submission smoke test) lives in:
+
+- **`docs/SHOPIFY_APP_STORE_SUBMISSION.md`** — the approval checklist + evidence map.
+- **`docs/APP-STORE-LISTING-COPY.md`** — ready-to-paste App Store copy.
+- `shopify.app.toml` — CLI deploy config (`shopify app deploy --path .`).
+- `extensions/theme-app-extension/shopify.extension.toml` — theme extension manifest.
+- `docs/app-store/icon-ai-visibility.png` — 1024×1024 listing icon.
+
 ## Roadmap (next)
-- [ ] GA4 Data API integration (service-account) for full funnel reports
 - [ ] Hindi UI + regional content (phase 2)
 - [ ] WooCommerce / standalone-site version
-- [ ] Multi-store agency dashboard (Agency plan)
+- [ ] Per-plan feature-gating switches in `/admin/settings` (map to BillingService plans)

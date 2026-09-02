@@ -74,6 +74,8 @@ export const engineMeta = {
     gemini: { label: 'Gemini', color: '#4285f4' },
     perplexity: { label: 'Perplexity', color: '#20b8cd' },
     grok: { label: 'Grok', color: '#111827' },
+    claude: { label: 'Claude', color: '#d97757' },
     deepseek: { label: 'DeepSeek', color: '#4d6bfe' },
+    copilot: { label: 'Microsoft Copilot', color: '#0f6cbd' },
     web: { label: 'AI Retrieval Proxy', color: '#94a3b8' },
 };

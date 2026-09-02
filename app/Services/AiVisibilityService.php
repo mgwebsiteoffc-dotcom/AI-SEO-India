@@ -11,43 +11,46 @@ use Illuminate\Support\Facades\Log;
 /**
  * AI Visibility Tracker.
  *
- * Mode A — LLM mode (honest AI mentions): when OPENAI_API_KEY and/or
- * GEMINI_API_KEY are configured, each tracked query is asked to the real model
- * and we record whether the brand is mentioned/cited in the answer.
+ * Which engines are monitored is a SaaS-owner decision, made in the /admin
+ * panel (see SaasSettingsService). Per engine we check in the best available
+ * way:
  *
- * Mode B — Retrieval proxy (no keys needed): AI answers are built from search
- * indexes, so we check whether the brand's domain appears in live web results
- * for the query. This is a genuine, honest proxy for "would an AI engine find
- * and cite you for this query".
+ *  - LLM mode: ChatGPT / Gemini are asked to the *real* model when the app has
+ *    the matching provider key (OPENAI_API_KEY / GEMINI_API_KEY), and we
+ *    record whether the brand is mentioned/cited in the answer.
+ *  - Retrieval-proxy mode (no key): AI answers are built from search indexes,
+ *    so we check whether the brand's domain appears in live web results for
+ *    the query. This is a genuine, honest proxy for "would an AI engine find
+ *    and cite you for this query". Identical proxy fetches are memoised per
+ *    run so enabling several engines never multiplies outbound requests.
  */
 class AiVisibilityService
 {
-    public const ENGINES = ['chatgpt', 'gemini', 'perplexity', 'grok', 'deepseek'];
+    /** Memoised retrieval-proxy answers keyed by query (per request/run). */
+    private array $proxyMemo = [];
 
+    /** Engines switched on by the SaaS owner. Empty = tracking effectively off. */
     public function availableEngines(): array
     {
-        $engines = [];
-        if (config('services.openai.key')) {
-            $engines[] = 'chatgpt';
-        }
-        if (config('services.gemini.key')) {
-            $engines[] = 'gemini';
-        }
-        if (empty($engines)) {
-            $engines[] = 'web'; // retrieval proxy
-        }
-        return $engines;
+        return app(SaasSettingsService::class)->enabledEngines();
     }
 
     /** Run a snapshot cycle for a store: returns snapshot rows created. */
     public function runSnapshot(Store $store): array
     {
+        $this->proxyMemo = []; // fresh per store run
+
+        $engines = $this->availableEngines();
+        if (empty($engines)) {
+            Log::info('AI visibility tracking skipped — no engines enabled in SaaS settings.');
+            return [];
+        }
+
         $queries = $store->queries()->where('active', true)->limit($store->queryLimit())->get();
         if ($queries->isEmpty()) {
             $queries = $this->seedQueries($store);
         }
 
-        $engines = $this->availableEngines();
         $created = [];
 
         foreach ($engines as $engine) {
@@ -93,17 +96,25 @@ class AiVisibilityService
         $brand = $store->brand_name ?: ucfirst(strtok($store->shop, '.'));
         $domain = $store->hostname();
 
-        if ($engine === 'web') {
-            return $this->checkRetrievalProxy($query, $domain);
-        }
-        if ($engine === 'chatgpt' && config('services.openai.key')) {
+        // LLM answer checks are only possible for engines with a live provider key.
+        $provider = app(SaasSettingsService::class)->llmProviderFor($engine);
+        if ($provider === 'openai') {
             return $this->checkLlm('openai', $query, $brand, $domain);
         }
-        if ($engine === 'gemini' && config('services.gemini.key')) {
+        if ($provider === 'gemini') {
             return $this->checkLlm('gemini', $query, $brand, $domain);
         }
-        // Engines without a configured provider fall back to the retrieval proxy
-        return $this->checkRetrievalProxy($query, $domain);
+        return $this->checkRetrievalProxyMemoized($query, $domain);
+    }
+
+    /** No-key mode: does the brand's domain surface in live web results? */
+    private function checkRetrievalProxyMemoized(string $query, string $domain): array
+    {
+        $key = $query.'|'.$domain;
+        if (! array_key_exists($key, $this->proxyMemo)) {
+            $this->proxyMemo[$key] = $this->checkRetrievalProxy($query, $domain);
+        }
+        return $this->proxyMemo[$key];
     }
 
     /** No-key mode: does the brand's domain surface in live web results? */

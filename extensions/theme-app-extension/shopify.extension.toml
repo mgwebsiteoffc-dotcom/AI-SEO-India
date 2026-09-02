@@ -1,6 +1,5 @@
-# Theme App Extension — injects AI Visibility JSON-LD + llms.txt link on the storefront
-name = "AI Visibility"
-handle = "ai-visibility"
+# Theme App Extension — injects AI Visibility JSON-LD + llms.txt link on the storefront.
+# Format per the Shopify CLI (v3): extensions/*/shopify.extension.toml
 
 [[extensions]]
 type = "theme"

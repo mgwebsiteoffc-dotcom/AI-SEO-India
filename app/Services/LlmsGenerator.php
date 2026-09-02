@@ -22,7 +22,7 @@ class LlmsGenerator
 
         if ($entries->isEmpty()) {
             // Build from the Shopify catalog via GraphQL
-            $entries = $this->buildFromCatalog($store);
+            $entries = collect($this->buildFromCatalog($store));
             if ($persist) {
                 $store->llmsEntries()->delete();
                 foreach ($entries as $i => $e) {

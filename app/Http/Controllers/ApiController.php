@@ -289,12 +289,14 @@ class ApiController extends Controller
 
     public function plans(Request $request)
     {
+        $monthly = fn (string $key) => $key === 'free' ? 0 : BillingService::price($key);
+
         return response()->json([
             'plans' => [
                 ['key' => 'free', 'name' => 'Free', 'price' => 0, 'annual_price' => 0, 'features' => ['AI Readiness Score', '25 tracked queries/mo', '1 store', 'AI SEO guides']],
-                ['key' => 'grow', 'name' => 'Grow', 'price' => 999, 'annual_price' => 9999, 'features' => ['Everything in Free', '150 tracked queries/mo', 'llms.txt + robots.txt automation', 'Schema builder', 'AI traffic attribution']],
-                ['key' => 'scale', 'name' => 'Scale', 'price' => 1999, 'annual_price' => 19999, 'features' => ['Everything in Grow', '500 tracked queries/mo', 'Smart Blogger + publish to blog', 'AI sentiment analysis', 'Competitor tracking (2)', 'Priority WhatsApp support']],
-                ['key' => 'agency', 'name' => 'Agency', 'price' => 4999, 'annual_price' => 49999, 'features' => ['Everything in Scale', '2000 tracked queries/mo', 'Multi-store dashboard', 'Competitor tracking (10)', 'White-label client reports']],
+                ['key' => 'grow', 'name' => 'Grow', 'price' => $monthly('grow'), 'annual_price' => $monthly('grow') * 10, 'features' => ['Everything in Free', '150 tracked queries/mo', 'llms.txt + robots.txt automation', 'Schema builder', 'AI traffic attribution']],
+                ['key' => 'scale', 'name' => 'Scale', 'price' => $monthly('scale'), 'annual_price' => $monthly('scale') * 10, 'features' => ['Everything in Grow', '500 tracked queries/mo', 'Smart Blogger + publish to blog', 'AI sentiment analysis', 'Competitor tracking (2)', 'Priority WhatsApp support']],
+                ['key' => 'agency', 'name' => 'Agency', 'price' => $monthly('agency'), 'annual_price' => $monthly('agency') * 10, 'features' => ['Everything in Scale', '2000 tracked queries/mo', 'Multi-store dashboard', 'Competitor tracking (10)', 'White-label client reports']],
             ],
             'current' => $this->store($request)->plan,
         ]);
