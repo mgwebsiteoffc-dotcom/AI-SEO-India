@@ -22,6 +22,7 @@ class Store extends Model
     ];
 
     public function snapshots(): HasMany { return $this->hasMany(AiSnapshot::class); }
+    public function brandSignalRuns(): HasMany { return $this->hasMany(BrandSignalRun::class); }
     public function audits(): HasMany { return $this->hasMany(AuditRun::class); }
     public function queries(): HasMany { return $this->hasMany(TrackedQuery::class); }
     public function llmsEntries(): HasMany { return $this->hasMany(LlmsEntry::class); }

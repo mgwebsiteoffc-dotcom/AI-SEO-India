@@ -81,6 +81,8 @@ Route::prefix('apps/ai-visibility')->middleware(VerifyProxyRequest::class)->grou
 // Embedded app JSON API (JWT-session protected)
 Route::prefix('api')->middleware(VerifyShopifySession::class)->group(function () {
     Route::get('/dashboard', [ApiController::class, 'dashboard']);
+    Route::get('/brand-signals', [ApiController::class, 'brandSignals']);
+    Route::post('/brand-signals/run', [ApiController::class, 'runBrandSignals']);
     Route::get('/audit/latest', [ApiController::class, 'latestAudit']);
     Route::post('/audit/run', [ApiController::class, 'runAudit']);
     Route::get('/tracker', [ApiController::class, 'tracker']);

@@ -123,6 +123,21 @@ class SeedDemo extends Command
             }
         }
 
+        // Brand Signals (one believable demo run for the panel)
+        $store->brandSignalRuns()->delete();
+        \App\Models\BrandSignalRun::create([
+            'store_id' => $store->id,
+            'score' => 65,
+            'summary' => ['total' => 65, 'grade' => 'B', 'checked_at' => now()->toIso8601String(), 'domain' => 'aurelianaturals.in'],
+            'checks' => [
+                ['key' => 'rating_schema', 'label' => 'Ratings in structured data', 'found' => false, 'detail' => 'No AggregateRating JSON-LD found on the homepage or a product page.', 'fix' => 'Add AggregateRating JSON-LD (ratingValue + reviewCount) to your Product schema — AI engines parse it directly.', 'score' => 0, 'max' => 30],
+                ['key' => 'review_content', 'label' => 'Visible reviews / testimonials', 'found' => true, 'detail' => 'Found review/testimonial content with ratings on the storefront.', 'fix' => 'Publish real customer reviews/testimonials on product pages (with star ratings) — citation-ready content.', 'score' => 15, 'max' => 15],
+                ['key' => 'platform_presence', 'label' => 'Review platforms', 'found' => true, 'detail' => 'Brand appears in web results near: amazon.in, mouthshut.com, google.co.in.', 'fix' => 'Claim profiles on review platforms (Trustpilot, Google Business Profile, MouthShut, JustDial) and Amazon/Flipkart listings.', 'score' => 25, 'max' => 25],
+                ['key' => 'third_party_mentions', 'label' => 'Off-site mentions', 'found' => true, 'detail' => '4 different site(s) mention the brand in web results (incl. beautylookbook.in).', 'fix' => 'Earn mentions from blogs, press and communities — off-site mentions correlate most strongly with AI citations.', 'score' => 20, 'max' => 20],
+                ['key' => 'social_profiles', 'label' => 'Social profiles linked', 'found' => false, 'detail' => 'No Instagram/Facebook/YouTube/X links found on the homepage.', 'fix' => 'Link Instagram / Facebook / YouTube / X profiles from your site so they are easy to verify.', 'score' => 5, 'max' => 10],
+            ],
+        ]);
+
         // Competitors
         $store->competitors()->delete();
         // Mention rows carry their own (store_id, snapshot_date, engine,

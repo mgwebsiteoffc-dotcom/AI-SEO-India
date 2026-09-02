@@ -123,6 +123,36 @@ class ApiController extends Controller
         ];
     }
 
+    // ----------------------------------------------------------- brand signals
+
+    public function brandSignals(Request $request)
+    {
+        $store = $this->store($request);
+        $run = app(\App\Services\BrandSignalsService::class)->latestFor($store);
+        if (! $run) {
+            return response()->json(['run' => null]);
+        }
+        return response()->json(['run' => $this->brandSignalShape($run)]);
+    }
+
+    public function runBrandSignals(Request $request)
+    {
+        $store = $this->store($request);
+        $run = app(\App\Services\BrandSignalsService::class)->run($store);
+        return response()->json(['run' => $this->brandSignalShape($run)]);
+    }
+
+    private function brandSignalShape($run): array
+    {
+        return [
+            'id' => $run->id,
+            'score' => $run->score,
+            'summary' => $run->summary,
+            'checks' => $run->checks,
+            'run_at' => $run->created_at?->toIso8601String(),
+        ];
+    }
+
     // ---------------------------------------------------------------- tracker
 
     public function tracker(Request $request)
