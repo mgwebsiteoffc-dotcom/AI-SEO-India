@@ -39,10 +39,20 @@ class Store extends Model
     public function queryLimit(): int
     {
         return match ($this->plan) {
-            'scale' => 500,
-            'agency' => 2000,
-            'grow' => 150,
+            'scale' => 2000,
+            'agency' => 10000,
+            'grow' => 300,
             default => 25,
+        };
+    }
+
+    public function competitorLimit(): int
+    {
+        return match ($this->plan) {
+            'scale' => 10,
+            'agency' => 100,
+            'grow' => 5,
+            default => 1,
         };
     }
 

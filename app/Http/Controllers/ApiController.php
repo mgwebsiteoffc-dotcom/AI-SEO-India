@@ -139,6 +139,7 @@ class ApiController extends Controller
                 'id' => $q->id, 'query' => $q->query, 'category' => $q->category, 'active' => (bool) $q->active,
             ]),
             'query_limit' => $store->queryLimit(),
+            'competitor_limit' => $store->competitorLimit(),
             'engines' => $latest->map(fn ($s) => [
                 'engine' => $s->engine,
                 'date' => $s->snapshot_date->format('Y-m-d'),
@@ -158,6 +159,11 @@ class ApiController extends Controller
         $query = trim((string) $request->input('query'));
         if ($query === '' || mb_strlen($query) > 120) {
             return response()->json(['error' => 'Invalid query'], 422);
+        }
+        if ($store->queries()->count() >= $store->queryLimit()) {
+            return response()->json([
+                'error' => 'You have reached your plan limit of '.$store->queryLimit().' tracked queries. Upgrade your plan to track more.',
+            ], 422);
         }
         $q = $store->queries()->create([
             'query' => $query,
@@ -219,6 +225,11 @@ class ApiController extends Controller
         $domain = rtrim($domain, '/');
         if ($name === '' || $domain === '' || ! preg_match('/^[a-z0-9\-\.]+$/i', $domain)) {
             return response()->json(['error' => 'Valid name and domain required'], 422);
+        }
+        if ($store->competitors()->count() >= $store->competitorLimit()) {
+            return response()->json([
+                'error' => 'Your plan allows '.$store->competitorLimit().' competitor(s). Upgrade to track more.',
+            ], 422);
         }
         $c = $store->competitors()->firstOrCreate(['domain' => $domain], ['name' => $name]);
         return response()->json(['competitor' => $c], 201);
@@ -293,10 +304,10 @@ class ApiController extends Controller
 
         return response()->json([
             'plans' => [
-                ['key' => 'free', 'name' => 'Free', 'price' => 0, 'annual_price' => 0, 'features' => ['AI Readiness Score', '25 tracked queries/mo', '1 store', 'AI SEO guides']],
-                ['key' => 'grow', 'name' => 'Grow', 'price' => $monthly('grow'), 'annual_price' => $monthly('grow') * 10, 'features' => ['Everything in Free', '150 tracked queries/mo', 'llms.txt + robots.txt automation', 'Schema builder', 'AI traffic attribution']],
-                ['key' => 'scale', 'name' => 'Scale', 'price' => $monthly('scale'), 'annual_price' => $monthly('scale') * 10, 'features' => ['Everything in Grow', '500 tracked queries/mo', 'Smart Blogger + publish to blog', 'AI sentiment analysis', 'Competitor tracking (2)', 'Priority WhatsApp support']],
-                ['key' => 'agency', 'name' => 'Agency', 'price' => $monthly('agency'), 'annual_price' => $monthly('agency') * 10, 'features' => ['Everything in Scale', '2000 tracked queries/mo', 'Multi-store dashboard', 'Competitor tracking (10)', 'White-label client reports']],
+                ['key' => 'free', 'name' => 'Free', 'price' => 0, 'annual_price' => 0, 'features' => ['AI Readiness Score', '25 tracked queries/mo', '1 competitor', 'AI SEO guides']],
+                ['key' => 'grow', 'name' => 'Grow', 'price' => $monthly('grow'), 'annual_price' => $monthly('grow') * 10, 'features' => ['Everything in Free', '300 tracked queries/mo', '5 competitors', 'llms.txt + robots.txt automation', 'Schema builder', 'AI traffic attribution']],
+                ['key' => 'scale', 'name' => 'Scale', 'price' => $monthly('scale'), 'annual_price' => $monthly('scale') * 10, 'features' => ['Everything in Grow', '2,000 tracked queries/mo', '10 competitors', 'Smart Blogger + publish to blog', 'AI sentiment analysis', 'Priority WhatsApp support']],
+                ['key' => 'agency', 'name' => 'Agency', 'price' => $monthly('agency'), 'annual_price' => $monthly('agency') * 10, 'features' => ['Everything in Scale', '10,000 tracked queries/mo', '100 competitors', 'Multi-store dashboard', 'White-label client reports']],
             ],
             'current' => $this->store($request)->plan,
         ]);

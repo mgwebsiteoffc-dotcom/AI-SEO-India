@@ -70,6 +70,7 @@
     <div class="stat-card">
       <div class="flex items-center justify-between mb-3">
         <div class="text-sm font-bold text-slate-900">Competitor watch — who does AI mention?</div>
+        <div v-if="competitorLimit" class="text-[11px] text-slate-400">{{ competitors.length }}/{{ competitorLimit }} competitors</div>
       </div>
       <form @submit.prevent="addCompetitor" class="flex gap-2 mb-4">
         <input v-model="compName" placeholder="Competitor name, e.g. Minimalist" class="input text-sm" />
@@ -123,6 +124,7 @@ const engines = ref([]);
 const llmMode = ref(false);
 const running = ref(false);
 const queryLimit = ref(25);
+const competitorLimit = ref(0);
 const newQuery = ref('');
 const newCat = ref('brand');
 const competitors = ref([]);
@@ -135,6 +137,7 @@ async function load() {
     engines.value = d.engines || [];
     llmMode.value = d.llm_mode;
     queryLimit.value = d.query_limit ?? queryLimit.value;
+    competitorLimit.value = d.competitor_limit ?? 0;
     try {
         const c = await api.get('/api/tracker/competitors');
         competitors.value = c.competitors || [];
