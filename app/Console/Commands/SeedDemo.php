@@ -404,6 +404,7 @@ class SeedDemo extends Command
         ]);
 
 $this->info('Demo store seeded: demo-brand.myshopify.com (Aurelia Naturals)');
+        $this->info('Agency demo seeded: /app?demo=agency  (demo-agency.myshopify.com + client urban-botanics, white-label report live)');
         $this->info('SaaS owner demo: /admin (+ 6 tenant stores, '.(\App\Models\Lead::count()).' leads)');
         $this->info('Open: '.config('app.url').'/?demo=1  (or /auth/demo)');
         return self::SUCCESS;

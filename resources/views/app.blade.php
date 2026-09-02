@@ -31,7 +31,12 @@
     @if ($demo)
         <div style="position:fixed;bottom:0;left:0;right:0;z-index:50;background:#0f172a;color:#fbbf24;font:600 12px/1.4 system-ui;padding:6px 14px;text-align:center">
             DEMO MODE — this panel runs on seeded data.
-            <a href="{{ route('demo-store') }}" style="color:#7dd3fc;text-decoration:underline">View the installed storefront →</a>
+            @if (($demoVal ?? '') === 'agency')
+                <a href="{{ route('demo-store') }}" style="color:#7dd3fc;text-decoration:underline">Agency demo storefront →</a>
+                &nbsp;·&nbsp; <a href="{{ route('app', ['demo' => 1]) }}" style="color:#7dd3fc;text-decoration:underline">Single-store demo →</a>
+            @else
+                <a href="{{ route('demo-store') }}" style="color:#7dd3fc;text-decoration:underline">View the installed storefront →</a>
+            @endif
             &nbsp;·&nbsp; <a href="{{ route('install') }}" style="color:#7dd3fc;text-decoration:underline">Install on a real store</a>
         </div>
     @endif
