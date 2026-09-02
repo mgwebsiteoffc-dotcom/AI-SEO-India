@@ -19,14 +19,28 @@ class LlmsGenerator
     public function generate(Store $store, bool $persist = true): string
     {
         $entries = $persist ? $store->llmsEntries()->orderBy('position')->get() : collect();
+        $settings = $store->settings ?? [];
 
-        if ($entries->isEmpty()) {
-            // Build from the Shopify catalog via GraphQL
-            $entries = collect($this->buildFromCatalog($store));
-            if ($persist) {
-                $store->llmsEntries()->delete();
-                foreach ($entries as $i => $e) {
-                    $store->llmsEntries()->create(array_merge($e, ['position' => $i]));
+        // products/update & friends mark the store dirty (settings['llms_dirty'])
+        // so the file auto-refreshes from the live catalog on next read. If the
+        // file is dirty (or has never been built) we rebuild from Shopify.
+        if ($entries->isEmpty() || ! empty($settings['llms_dirty'])) {
+            // Rebuild from the live catalog. Only fall back to the demo seed
+            // when the file has never been built (or the store is a demo) —
+            // never overwrite real entries just because the Shopify API
+            // hiccupped (dirty flag stays set and the next read retries).
+            $fresh = $this->buildFromCatalog($store, allowFallback: $entries->isEmpty() || (bool) $store->is_demo);
+            if (empty($fresh)) {
+                $entries = collect(); // content will render empty; flag preserved
+            } else {
+                $entries = collect($fresh);
+                if ($persist) {
+                    $store->llmsEntries()->delete();
+                    foreach ($entries as $i => $e) {
+                        $store->llmsEntries()->create(array_merge($e, ['position' => $i]));
+                    }
+                    unset($settings['llms_dirty']);
+                    $store->update(['settings' => $settings]);
                 }
             }
         }
@@ -83,8 +97,13 @@ class LlmsGenerator
         return implode("\n", $lines)."\n";
     }
 
-    /** Pull the real catalog via Shopify GraphQL (products, collections, pages, blogs). */
-    public function buildFromCatalog(Store $store): array
+    /**
+     * Pull the real catalog via Shopify GraphQL (products, collections, pages, blogs).
+     *
+     * @param bool $allowFallback when true and the API is unreachable, return the
+     *                            demo seed catalog (only used for never-built files).
+     */
+    public function buildFromCatalog(Store $store, bool $allowFallback = false): array
     {
         $entries = [];
         try {
@@ -144,8 +163,8 @@ class LlmsGenerator
             Log::warning('Catalog fetch failed for '.$store->shop.': '.$e->getMessage());
         }
 
-        // Fallback seed when the API is unavailable (demo)
-        if (empty($entries)) {
+        // Fallback seed when the API is unavailable AND this is a demo/never-built file.
+        if (empty($entries) && $allowFallback) {
             $brand = $store->brand_name ?: ucfirst(strtok($store->shop, '.'));
             $entries = [
                 ['kind' => 'product', 'title' => $brand.' Signature Serum 30ml', 'path' => '/products/signature-serum', 'description' => 'Vitamin C + niacinamide serum for Indian skin, ₹799.'],

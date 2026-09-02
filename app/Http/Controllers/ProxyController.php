@@ -21,14 +21,16 @@ class ProxyController extends Controller
         return $request->attributes->get('store');
     }
 
-    /** GET .../llms.txt → the AI reading list */
+    /** GET .../llms.txt → the AI reading list (auto-refreshes when stale) */
     public function llmsTxt(Request $request)
     {
         $store = $this->store($request);
         if (! $store) {
             return response('Not found', 404);
         }
-        $content = app(LlmsGenerator::class)->generate($store);
+        // persist:true rebuilds from the live catalog when products changed
+        // (llms_dirty flag) or the file was never built — see LlmsGenerator.
+        $content = app(LlmsGenerator::class)->generate($store, persist: true);
         return response($content, 200, [
             'Content-Type' => 'text/plain; charset=utf-8',
             'Cache-Control' => 'public, max-age=3600',
