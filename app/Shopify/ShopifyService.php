@@ -25,7 +25,10 @@ class ShopifyService
         $scopes = (array) config('shopify.scopes', []);
 
         // No credentials configured (local preview / unconfigured install) → SDK stays off.
-        if ($apiKey === '' || $secret === '') {
+        // .env.example ships placeholders — treat any "your_…" value the same as empty
+        // so demo stores get graceful/demo responses instead of real Shopify calls.
+        $isPlaceholder = fn (string $v): bool => $v === '' || str_contains($v, 'your_');
+        if ($isPlaceholder($apiKey) || $isPlaceholder($secret)) {
             return false;
         }
 

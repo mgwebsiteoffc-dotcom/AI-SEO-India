@@ -106,3 +106,23 @@ php artisan serve                                    # http://127.0.0.1:8000
 | Founder blog with JSON-LD | ✅ built + verified |
 | Demo mode `/?demo=1` | ✅ built + verified (401 bug fixed) |
 | Privacy + Terms pages (Shopify App Store requirement) | ✅ **added** |
+
+## 6. Panel + Shopify-app test round (2026-09-02)
+
+After the sandbox restore, the full **panel** (embedded app) and **Shopify app** flows were exercised in demo mode:
+
+| Flow | Result |
+|---|---|
+| `/app?demo=1` shell (SPA) | 200, `data-demo=1`, plan `scale`, JS/CSS load |
+| 12 GET APIs (dashboard, audit, tracker, competitors, llms, schema/status, plans, attribution, GA4, content, sentiment, settings) | all 200 |
+| POST `audit/run`, `tracker/query` (201), `tracker/run`, `tracker/competitors` (201), `llms/generate`, `llms/toggle`, `settings` | 200/201 |
+| POST `content/generate` (201) → `publish` → graceful JSON 422 ("needs live Shopify credentials"); `regenerate`; DELETE 200 | ✓ |
+| POST `billing/subscribe` → **demo confirmation URL** (was hitting live Shopify GraphQL: `.env` placeholders were treated as real credentials — fixed in `ShopifyService::init()`; any `your_…` value is now "unconfigured") | ✓ |
+| `/billing/callback` → 302 to `https://<shop>/admin/apps`; plan persisted | ✓ |
+| `/auth/install?shop=…` → graceful 503 explaining to configure real credentials (was a 500); bad shop → 400 | ✓ |
+| `/auth/callback` without valid HMAC → 403 | ✓ |
+| App-proxy endpoints: unsigned → 403 · valid HMAC signature → 200 · tampered → 403 · unknown shop → 404 · `?demo=1` → 200 | ✓ |
+| `/schema` JSON-LD: `/` → Organization+WebSite; `/products/<handle>` → **full Product + Offer (INR) JSON-LD** — added a demo-store fallback that serves the seeded catalog (was falling back to Organization only) | ✓ |
+| Debug error pages now render (added a `Composer\Autoload\ClassLoader` shim to the generated autoloader — Laravel's exception renderer needs it) | ✓ |
+
+**Still requires real Shopify Partner credentials** (not testable in this sandbox): live OAuth install, real blog publish, real billing charge creation, webhook HMAC processing end-to-end. All those paths now fail **gracefully with clear messages** instead of 500s.

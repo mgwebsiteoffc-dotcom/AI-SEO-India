@@ -17,6 +17,18 @@ class AuthController extends Controller
         if (! preg_match('/^[a-z0-9\-]+\.myshopify\.com$/', $shop)) {
             return response('Invalid shop domain', 400);
         }
+
+        // No real Shopify credentials configured (local preview) → explain
+        // instead of letting the SDK throw a 500.
+        if (! ShopifyService::init()) {
+            return response(
+                'AI Visibility is not connected to Shopify yet. Set SHOPIFY_API_KEY and '
+                .'SHOPIFY_API_SECRET in .env to install on a live store. '
+                .'For a preview without credentials open /app?demo=1.',
+                503
+            );
+        }
+
         return redirect()->away(OAuthService::begin($shop));
     }
 

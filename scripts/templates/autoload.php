@@ -50,4 +50,15 @@ foreach ($files as $file) {
     if (is_file($file)) require_once $file;
 }
 
+// Minimal Composer\Autoload\ClassLoader shim (see composer/ClassLoader.php):
+// Laravel's exception renderer and dev tools expect the real Composer loader
+// API; register our generated maps through it.
+require_once $vendorDir . '/composer/ClassLoader.php';
+$loader = new \Composer\Autoload\ClassLoader();
+$loader->register();
+$loader->addClassMap($classMap);
+foreach ($psr4 as $prefix => $dirs) {
+    $loader->setPsr4($prefix, $dirs);
+}
+
 return $files; // satisfies tooling that reads the return value of vendor/autoload.php

@@ -171,6 +171,7 @@ function generateAutoload() {
 
   // autoload.php is a static template (kept in-repo so backslash escaping is never mangled)
   fs.copyFileSync(path.join(root, 'scripts', 'templates', 'autoload.php'), path.join(vendorDir, 'autoload.php'));
+  fs.copyFileSync(path.join(root, 'scripts', 'templates', 'ClassLoader.php'), path.join(outDir, 'ClassLoader.php'));
 
   console.log('autoload files generated:', Object.keys(psr4).length, 'psr-4 prefixes,', files.length, 'files');
 }

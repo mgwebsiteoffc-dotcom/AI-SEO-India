@@ -82,6 +82,13 @@ class ProxyController extends Controller
         if (preg_match('#^/products/([a-z0-9\-]+)#i', $path, $m)) {
             $handle = $m[1];
             $product = $this->fetchProduct($store, $handle);
+
+            // Demo store without live Shopify data → serve the seeded catalog
+            // entry so the theme-extension flow is fully previewable.
+            if (! $product && $store->is_demo) {
+                $product = $this->demoProduct($store, $handle);
+            }
+
             if ($product) {
                 $product['url'] = "https://{$domain}{$path}";
                 $product['brand'] = $brand;
@@ -99,6 +106,32 @@ class ProxyController extends Controller
             ],
         ], JSON_UNESCAPED_SLASHES);
         return response($json, 200, ['Content-Type' => 'application/ld+json']);
+    }
+
+    /** Demo fallback: product from the seeded llms catalog (no live store needed). */
+    private function demoProduct(Store $store, string $handle): ?array
+    {
+        $entry = \App\Models\LlmsEntry::query()
+            ->where('store_id', $store->id)
+            ->where('kind', 'product')
+            ->where('path', 'like', "%/products/{$handle}")
+            ->first();
+
+        if (! $entry) {
+            return null;
+        }
+
+        preg_match('/[₹]\s*(\d+(?:\.\d+)?)/u', (string) $entry->description, $m);
+
+        return [
+            'title' => $entry->title,
+            'description' => $entry->description,
+            'image' => null,
+            'price' => $m[1] ?? '999',
+            'available' => true,
+            'rating' => null,
+            'review_count' => 0,
+        ];
     }
 
     private function fetchProduct(Store $store, string $handle): ?array
