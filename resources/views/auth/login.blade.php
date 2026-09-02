@@ -4,10 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>AI Visibility for Shopify — Get found by ChatGPT, Gemini &amp; Perplexity</title>
+    <meta name="description" content="Install AI Visibility — the AI SEO app for Indian D2C brands on Shopify. AI Readiness Score, visibility tracking, schema and Smart Blogger. From ₹999/month.">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css'])
     <style>
-        body { background: linear-gradient(160deg, #0f172a 0%, #1e293b 55%, #0a84ff22 100%); min-height: 100vh; }
-        .card { background: rgba(255,255,255,0.97); border-radius: 20px; box-shadow: 0 20px 60px rgba(2,6,23,.35); }
+        body { background: radial-gradient(900px 500px at 20% -10%, rgba(10,132,255,.25) 0%, transparent 60%), linear-gradient(160deg, #070d1a 0%, #0b1220 55%, #101a2e 100%); min-height: 100vh; }
+        .card { background: rgba(255,255,255,0.98); border-radius: 22px; box-shadow: 0 30px 80px rgba(2,6,23,.5); }
     </style>
 </head>
 <body class="flex items-center justify-center p-6">

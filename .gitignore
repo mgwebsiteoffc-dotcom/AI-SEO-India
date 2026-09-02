@@ -1,6 +1,13 @@
 *.log
 .DS_Store
 .env
+/bootstrap/cache/*.php
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/framework/testing/*
+/storage/logs/*
+/database/database.sqlite
 .env.backup
 .env.production
 .phpactor.json

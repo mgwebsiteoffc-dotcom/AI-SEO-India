@@ -6,6 +6,10 @@
     <title>AI Visibility — AI SEO for Shopify</title>
     <meta name="shopify-api-key" content="{{ $apiKey }}">
     <meta name="shopify-shop-origin" content="{{ $shop }}">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>

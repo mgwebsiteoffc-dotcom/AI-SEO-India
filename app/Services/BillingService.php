@@ -27,10 +27,12 @@ class BillingService
 
         // Demo store without Shopify credentials → simulate the charge so the UI flow can be previewed
         if ($store->is_demo && ! ShopifyService::init()) {
+            $url = '/billing/callback?plan='.$plan.'&interval='.$interval.'&shop='.$store->shop.'&charge_id=demo-charge';
             return [
                 'ok' => true,
                 'demo' => true,
-                'confirmation_url' => '/billing/callback?plan='.$plan.'&interval='.$interval.'&shop='.$store->shop.'&charge_id=demo-charge',
+                'confirmationUrl' => $url,
+                'confirmation_url' => $url,
                 'message' => 'Demo mode: Shopify billing skipped (no API credentials configured).',
             ];
         }

@@ -59,4 +59,14 @@ class MarketingController extends Controller
         $post = Post::where('slug', $slug)->whereNotNull('published_at')->firstOrFail();
         return view('marketing.post', ['post' => $post]);
     }
+
+    public function privacy()
+    {
+        return view('marketing.privacy');
+    }
+
+    public function terms()
+    {
+        return view('marketing.terms');
+    }
 }

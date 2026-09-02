@@ -75,7 +75,7 @@ const store = reactive({
     brand: el.dataset.brand || '',
     domain: el.dataset.domain || '',
     plan: el.dataset.plan || 'free',
-    is_demo: window.demoMode,
+    is_demo: el.dataset.demo === '1', // dataset read here (module scope) — window.demoMode is set later in app.js
 });
 const data = reactive({ score: null, grade: null, trend: [], engines: [], store: {} });
 

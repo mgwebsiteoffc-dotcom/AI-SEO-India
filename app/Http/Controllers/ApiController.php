@@ -47,8 +47,8 @@ class ApiController extends Controller
                 'is_demo' => $store->is_demo,
             ],
             'score' => $latestAudit?->score,
-            'grade' => $latestAudit?->summary['grade'] ?? null,
-            'categories' => $latestAudit?->summary['categories'] ?? null,
+            'grade' => isset($latestAudit->summary['grade']) ? $latestAudit->summary['grade'] : null,
+            'categories' => isset($latestAudit->summary['categories']) ? $latestAudit->summary['categories'] : null,
             'audit_count' => $store->audits()->count(),
             'last_audit_at' => $latestAudit?->completed_at?->toIso8601String(),
             'mentions_today' => [

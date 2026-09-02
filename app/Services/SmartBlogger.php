@@ -166,6 +166,9 @@ class SmartBlogger
 
     public function publish(Store $store, ContentPost $post): array
     {
+        if (! ShopifyService::init()) {
+            return ['ok' => false, 'error' => 'Publishing to the blog needs live Shopify credentials (set SHOPIFY_API_KEY/SHOPIFY_API_SECRET). In demo mode you can generate articles, but publishing requires a real store.'];
+        }
         try {
             $client = ShopifyService::client($store);
             $blogId = $this->ensureBlog($client, $store);

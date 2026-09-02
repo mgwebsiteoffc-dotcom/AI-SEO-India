@@ -125,7 +125,7 @@ class AuditService
         }
     }
 
-    private function has(string $haystack, string $needle): bool
+    private function has(?string $haystack, string $needle): bool
     {
         return $haystack !== null && stripos($haystack, $needle) !== false;
     }

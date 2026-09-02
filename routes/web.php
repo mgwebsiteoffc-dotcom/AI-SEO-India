@@ -27,6 +27,8 @@ Route::get('/scorecard', [MarketingController::class, 'scorecard'])->name('score
 Route::post('/lead', [MarketingController::class, 'captureLead'])->name('lead');
 Route::get('/blog', [MarketingController::class, 'blog'])->name('blog');
 Route::get('/blog/{slug}', [MarketingController::class, 'blogShow'])->name('blog.show');
+Route::get('/privacy', [MarketingController::class, 'privacy'])->name('privacy');
+Route::get('/terms', [MarketingController::class, 'terms'])->name('terms');
 
 // Embedded app shell (session OR demo)
 Route::get('/app', [AppController::class, 'index'])->name('app');
