@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'shopify.session' => VerifyShopifySession::class,
             'shopify.proxy' => VerifyProxyRequest::class,
+            'admin.guard' => \App\Http\Middleware\AdminAccess::class,
         ]);
         // Embedded-app API is authenticated via Shopify JWT (Authorization header),
         // App Proxy via signed query — no session CSRF needed on these routes.

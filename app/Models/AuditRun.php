@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AuditRun extends Model
@@ -11,4 +12,6 @@ class AuditRun extends Model
     protected $casts = ['summary' => 'array', 'started_at' => 'datetime', 'completed_at' => 'datetime'];
 
     public function issues(): HasMany { return $this->hasMany(AuditIssue::class); }
+
+    public function store(): BelongsTo { return $this->belongsTo(Store::class); }
 }

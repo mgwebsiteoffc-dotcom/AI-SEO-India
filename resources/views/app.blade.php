@@ -30,7 +30,9 @@
          data-plan="{{ $store->plan }}"></div>
     @if ($demo)
         <div style="position:fixed;bottom:0;left:0;right:0;z-index:50;background:#0f172a;color:#fbbf24;font:600 12px/1.4 system-ui;padding:6px 14px;text-align:center">
-            DEMO MODE — this preview runs on seeded data. Install from the Shopify App Store for live data.
+            DEMO MODE — this panel runs on seeded data.
+            <a href="{{ route('demo-store') }}" style="color:#7dd3fc;text-decoration:underline">View the installed storefront →</a>
+            &nbsp;·&nbsp; <a href="{{ route('install') }}" style="color:#7dd3fc;text-decoration:underline">Install on a real store</a>
         </div>
     @endif
 </body>

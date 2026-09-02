@@ -213,7 +213,79 @@ class SeedDemo extends Command
             Post::create($p + ['author' => 'AI Visibility Team', 'published_at' => now()->subDays(rand(2, 20))]);
         }
 
+        // ---- SaaS-owner demo: a handful of fictional tenant stores -----------
+        $tenants = [
+            ['shop' => 'vegan-d2c.myshopify.com',     'brand' => 'Vegan D2C Co',    'domain' => 'vegand2c.in',        'plan' => 'grow',   'billing' => 'active',    'created_days' => 96,  'trial' => false],
+            ['shop' => 'sundar-skincare.myshopify.com','brand' => 'Sundar Skincare', 'domain' => 'sundarskincare.in', 'plan' => 'scale',  'billing' => 'active',    'created_days' => 61,  'trial' => false],
+            ['shop' => 'glow-lab.myshopify.com',       'brand' => 'Glow Lab',        'domain' => null,                 'plan' => 'scale',  'billing' => 'active',    'created_days' => 44,  'trial' => false],
+            ['shop' => 'ayurveda-kart.myshopify.com',  'brand' => 'Ayurveda Kart',   'domain' => 'ayurvedakart.in',   'plan' => 'agency', 'billing' => 'active',    'created_days' => 30,  'trial' => false],
+            ['shop' => 'chai-cosmetics.myshopify.com', 'brand' => 'Chai Cosmetics',  'domain' => null,                 'plan' => 'grow',   'billing' => 'cancelled', 'created_days' => 120, 'trial' => false],
+            ['shop' => 'organic-hub.myshopify.com',    'brand' => 'Organic Hub',     'domain' => 'organichub.in',     'plan' => 'free',   'billing' => 'inactive',  'created_days' => 6,   'trial' => true],
+        ];
+        // Remove previous tenant demo rows (identified by shop) so re-seeds stay stable.
+        Store::whereIn('shop', array_column($tenants, 'shop'))->delete();
+        foreach ($tenants as $t) {
+            $s = Store::create([
+                'shop' => $t['shop'],
+                'brand_name' => $t['brand'],
+                'domain' => $t['domain'],
+                'plan' => $t['plan'],
+                'billing_status' => $t['billing'],
+                'currency' => 'INR',
+                'country' => 'IN',
+                'created_at' => now()->subDays($t['created_days']),
+                'updated_at' => now()->subDays($t['created_days']),
+            ]);
+            if ($t['billing'] === 'active') {
+                $s->forceFill(['billing_ends_at' => now()->addDays(rand(8, 28))])->save();
+            } elseif ($t['trial']) {
+                $s->forceFill(['trial_ends_at' => now()->addDays(3)])->save();
+            }
+        }
+
+        // ---- SaaS-owner demo: leads (only when the table is empty, so fresh
+        // scorecard signups made in this sandbox are never wiped) ------------
+        if (\App\Models\Lead::count() === 0) {
+            $sampleLeads = [
+                ['meera@vegankart.in', 'VeganKart', 'vegankart.in'],
+                ['rahul@dermacraft.in', 'DermaCraft', 'dermacraft.myshopify.com'],
+                ['priya.shah@botaniq.in', 'Botaniq', null],
+                ['arjun@thesunscreenco.in', 'The Sunscreen Co', 'thesunscreenco.in'],
+                ['neha@haircarehub.in', 'HairCare Hub', 'haircarehub.myshopify.com'],
+                ['karan@desi-grooming.in', 'Desi Grooming', 'desi-grooming.in'],
+                ['shreya@lipglow.in', 'LipGlow', null],
+                ['aisha@cleanbeauty.in', 'Clean Beauty India', 'cleanbeauty.in'],
+            ];
+            foreach ($sampleLeads as $i => [$email, $brand, $shopUrl]) {
+                \App\Models\Lead::create([
+                    'email' => $email, 'brand' => $brand, 'shop_url' => $shopUrl,
+                    'source' => ['scorecard', 'scorecard', 'pricing', 'scorecard', 'blog', 'scorecard', 'pricing', 'footer'][$i],
+                    'created_at' => now()->subDays(rand(1, 40)),
+                    'updated_at' => now()->subDays(rand(1, 40)),
+                ]);
+            }
+        }
+
+        // ---- SaaS-owner demo: a few webhook events --------------------------
+        if (\App\Models\WebhookCall::count() === 0) {
+            $topics = [
+                ['orders/paid', 'sundar-skincare.myshopify.com', 'processed'],
+                ['orders/paid', 'vegan-d2c.myshopify.com', 'processed'],
+                ['products/update', 'glow-lab.myshopify.com', 'processed'],
+                ['orders/paid', 'ayurveda-kart.myshopify.com', 'processed'],
+                ['app/uninstalled', 'chai-cosmetics.myshopify.com', 'processed'],
+            ];
+            foreach ($topics as $i => [$topic, $shop, $status]) {
+                \App\Models\WebhookCall::create([
+                    'topic' => $topic, 'shop' => $shop, 'status' => $status,
+                    'created_at' => now()->subDays($i + 1)->subHours(rand(1, 12)),
+                    'updated_at' => now()->subDays($i + 1)->subHours(rand(1, 12)),
+                ]);
+            }
+        }
+
         $this->info('Demo store seeded: demo-brand.myshopify.com (Aurelia Naturals)');
+        $this->info('SaaS owner demo: /admin (+ 6 tenant stores, '.(\App\Models\Lead::count()).' leads)');
         $this->info('Open: '.config('app.url').'/?demo=1  (or /auth/demo)');
         return self::SUCCESS;
     }

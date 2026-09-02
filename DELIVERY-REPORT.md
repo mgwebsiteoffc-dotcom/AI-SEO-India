@@ -126,3 +126,17 @@ After the sandbox restore, the full **panel** (embedded app) and **Shopify app**
 | Debug error pages now render (added a `Composer\Autoload\ClassLoader` shim to the generated autoloader — Laravel's exception renderer needs it) | ✓ |
 
 **Still requires real Shopify Partner credentials** (not testable in this sandbox): live OAuth install, real blog publish, real billing charge creation, webhook HMAC processing end-to-end. All those paths now fail **gracefully with clear messages** instead of 500s.
+
+## 7. Round 3 — pages, install flow, live demo & SaaS-owner panel (2026-09-02)
+
+Responding to review feedback ("other pages missing, no super-admin panel, no install path, live demo UI-only, free score not working"):
+
+| Ask | Delivered |
+|---|---|
+| More marketing pages | Dedicated **/features**, **/how-it-works**, **/faq**, **/install**, **/demo-store** pages on the premium shell; header + footer nav rebuilt (Features · How it works · Pricing · FAQ · Blog + Install app / Live demo / Free AI Score), mobile second-row nav added |
+| Install the app on a store | **/install** page: with Shopify credentials → real OAuth install form (`/auth/install?shop=…`); without credentials (this preview) → **"Install demo store"** one-click demo install + a 3-step real-install guide + WhatsApp partner help; "Install app" CTA in header, hero and footer; demo banner links to it |
+| Super admin / SaaS-owner panel | **/admin** owner panel (Overview KPI + plans/revenue, Stores with plan changes + delete, Leads with delete, Activity webhooks/audits). Local/demo = open; production gated by `ADMIN_EMAIL`/`ADMIN_PASSWORD` HTTP basic. Footer "Owner login" link. Seed now adds 6 demo tenant stores, 8 leads and webhook events so the panel is populated |
+| Live demo "UI only" | `/app?demo=1` panel is data-backed (score 74, tracker, posts, orders) and the new **/demo-store** shows what the installed storefront gets: live llms.txt / robots.txt / sitemap / Product JSON-LD chips + product cards with per-product schema links |
+| Free AI Score not working | Scorecard now **runs a real live audit** on submit (with or without a store URL), shows the 0–100 score + grade + severity-sorted fix list instantly, and saves the lead. Kept the demo sample card below. |
+
+All flows re-verified end-to-end over HTTP (routes 200, CSRF POSTs pass, probe store cleaned up, seed idempotent).

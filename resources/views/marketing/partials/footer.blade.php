@@ -18,17 +18,20 @@
         <div class="text-xs">
             <div class="font-semibold text-slate-300 mb-3 uppercase tracking-wider text-[10px] text-slate-500">Product</div>
             <div class="space-y-2.5 text-slate-500">
+                <a href="{{ route('features') }}" class="block hover:text-slate-300 transition-colors">Features</a>
+                <a href="{{ route('how-it-works') }}" class="block hover:text-slate-300 transition-colors">How it works</a>
                 <a href="{{ route('pricing') }}" class="block hover:text-slate-300 transition-colors">Pricing</a>
-                <a href="{{ route('scorecard') }}" class="block hover:text-slate-300 transition-colors">Free AI Score</a>
+                <a href="{{ route('install') }}" class="block hover:text-slate-300 transition-colors">Install on Shopify</a>
                 <a href="{{ route('app', ['demo' => 1]) }}" class="block hover:text-slate-300 transition-colors">Live demo</a>
-                <a href="{{ route('home') }}#features" class="block hover:text-slate-300 transition-colors">Features</a>
+                <a href="{{ route('scorecard') }}" class="block hover:text-slate-300 transition-colors">Free AI Score</a>
             </div>
         </div>
         <div class="text-xs">
             <div class="font-semibold text-slate-300 mb-3 uppercase tracking-wider text-[10px] text-slate-500">Learn</div>
             <div class="space-y-2.5 text-slate-500">
                 <a href="{{ route('blog') }}" class="block hover:text-slate-300 transition-colors">Blog</a>
-                <a href="{{ route('home') }}#how" class="block hover:text-slate-300 transition-colors">How it works</a>
+                <a href="{{ route('faq') }}" class="block hover:text-slate-300 transition-colors">FAQ</a>
+                <a href="{{ route('demo-store') }}" class="block hover:text-slate-300 transition-colors">Demo storefront</a>
                 <a href="{{ route('privacy') }}" class="block hover:text-slate-300 transition-colors">Privacy Policy</a>
                 <a href="{{ route('terms') }}" class="block hover:text-slate-300 transition-colors">Terms of Service</a>
             </div>
@@ -42,6 +45,8 @@
                 <span class="hidden md:inline text-slate-700">·</span>
                 <a href="{{ route('privacy') }}" class="hover:text-slate-400">Privacy</a>
                 <a href="{{ route('terms') }}" class="hover:text-slate-400">Terms</a>
+                <span class="hidden md:inline text-slate-700">·</span>
+                <a href="{{ route('admin.overview') }}" class="hover:text-slate-400">Owner login</a>
             </div>
         </div>
     </div>

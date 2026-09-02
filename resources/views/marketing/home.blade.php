@@ -35,13 +35,14 @@
             </p>
 
             <div class="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fade-up delay-300">
-                <a href="{{ route('scorecard') }}" class="btn-primary px-7 py-3.5 text-sm !bg-brand-500 hover:!bg-brand-400 shadow-xl shadow-brand-500/25">
-                    Run your free AI Score →
+                <a href="{{ route('install') }}" class="btn-primary px-7 py-3.5 text-sm !bg-emerald-500 hover:!bg-emerald-400 shadow-xl shadow-emerald-500/25">
+                    Install on Shopify →
                 </a>
                 <a href="{{ route('app', ['demo' => 1]) }}" class="btn-secondary px-7 py-3.5 text-sm">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                     Watch the live demo
                 </a>
+                <a href="{{ route('scorecard') }}" class="text-xs font-semibold text-slate-400 hover:text-white transition-colors underline underline-offset-4">Free AI Score →</a>
             </div>
 
             <p class="mt-5 text-xs text-slate-500">Free plan forever · 3-day trial on paid · Cancel anytime · Made for Indian stores</p>
