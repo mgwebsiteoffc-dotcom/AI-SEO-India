@@ -33,7 +33,11 @@ class SeedDemo extends Command
                 'country' => 'IN',
                 'currency' => 'INR',
                 'is_demo' => true,
-                'settings' => ['llms_enabled' => true, 'schema_installed' => true],
+                'settings' => [
+                    'llms_enabled' => true,
+                    'schema_installed' => true,
+                    'report_email' => 'owner@aurelianaturals.in',
+                ],
             ]
         );
 

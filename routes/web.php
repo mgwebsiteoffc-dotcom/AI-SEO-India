@@ -50,6 +50,8 @@ Route::prefix('admin')->middleware('admin.guard')->group(function () {
     Route::post('/settings/billing', [\App\Http\Controllers\AdminController::class, 'saveSettingsBilling'])->name('admin.settings.billing');
     Route::post('/settings/indexnow', [\App\Http\Controllers\AdminController::class, 'saveSettingsIndexNow'])->name('admin.settings.indexnow');
     Route::post('/settings/indexnow-run', [\App\Http\Controllers\AdminController::class, 'runIndexNow'])->name('admin.settings.indexnow-run');
+    Route::post('/settings/weekly', [\App\Http\Controllers\AdminController::class, 'saveSettingsWeekly'])->name('admin.settings.weekly');
+    Route::post('/settings/weekly-run', [\App\Http\Controllers\AdminController::class, 'runWeeklyReports'])->name('admin.settings.weekly-run');
     Route::post('/settings/run', [\App\Http\Controllers\AdminController::class, 'runTracking'])->name('admin.settings.run');
     Route::post('/stores/{store}/plan', [\App\Http\Controllers\AdminController::class, 'updatePlan'])->name('admin.store.plan');
     Route::post('/stores/{store}/delete', [\App\Http\Controllers\AdminController::class, 'deleteStore'])->name('admin.store.delete');

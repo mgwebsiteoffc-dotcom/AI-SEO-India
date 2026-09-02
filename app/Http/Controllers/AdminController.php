@@ -13,6 +13,7 @@ use App\Models\IndexnowSubmission;
 use App\Services\BillingService;
 use App\Services\IndexNowService;
 use App\Services\SaasSettingsService;
+use App\Services\WeeklyReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 
@@ -156,6 +157,8 @@ class AdminController extends Controller
         }
 
         $indexnow = app(IndexNowService::class);
+        $weekly = app(WeeklyReportService::class);
+        $storesWithReportEmail = Store::all()->filter(fn ($s) => $weekly->reportEmail($s))->count();
 
         return view('admin.settings', [
             'engines' => $engines,
@@ -174,6 +177,11 @@ class AdminController extends Controller
                 'key' => $indexnow->key(),
                 'pending' => IndexnowSubmission::whereNull('submitted_at')->count(),
                 'sent' => IndexnowSubmission::whereNotNull('submitted_at')->count(),
+            ],
+            'weekly' => [
+                'enabled' => $weekly->enabled(),
+                'time' => $weekly->config()['time'],
+                'stores_with_email' => $storesWithReportEmail,
             ],
         ]);
     }
@@ -218,6 +226,25 @@ class AdminController extends Controller
         );
 
         return back()->with('status', 'Plan prices updated — new charges use these amounts.');
+    }
+
+    /** POST /admin/settings/weekly — master switch for weekly report emails. */
+    public function saveSettingsWeekly(Request $request)
+    {
+        app(WeeklyReportService::class)->saveConfig($request->boolean('weekly_enabled'));
+
+        return back()->with('status', $request->boolean('weekly_enabled')
+            ? 'Weekly AI Visibility Reports enabled (Mondays '.app(WeeklyReportService::class)->config()['time'].' IST).'
+            : 'Weekly AI Visibility Reports disabled.');
+    }
+
+    /** POST /admin/settings/weekly-run — send the digest now to every eligible store. */
+    public function runWeeklyReports(Request $request)
+    {
+        $exit = Artisan::call('reports:weekly');
+
+        return back()->with($exit === 0 ? 'status' : 'error',
+            $exit === 0 ? 'Weekly report run finished. '.trim((string) Artisan::output()) : 'Weekly report run failed — see the server log.');
     }
 
     /** POST /admin/settings/indexnow — master switch + shared key for instant indexing. */

@@ -143,6 +143,37 @@
             </p>
         </section>
 
+        {{-- ── Weekly AI Visibility Report ───────────────────────────────── --}}
+        <section class="glass rounded-2xl p-5 md:p-6">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                <div>
+                    <h2 class="font-display font-bold text-white text-lg">Weekly AI Visibility Report (email)</h2>
+                    <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                        Every Monday at {{ $weekly['time'] }} IST each store with a report email (set in the app →
+                        Settings) receives a digest: overall AI mention rate vs the previous week, per-engine deltas,
+                        citation samples and their latest audit score. Delivery uses the configured mail driver.
+                    </p>
+                </div>
+                <span class="badge {{ $weekly['enabled'] ? 'badge-green' : 'badge-slate' }} shrink-0">
+                    {{ $weekly['enabled'] ? 'On · Mondays '.$weekly['time'].' IST' : 'Off' }} · {{ $weekly['stores_with_email'] }} store(s) have a report email
+                </span>
+            </div>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-4 flex-wrap">
+                <form method="POST" action="{{ route('admin.settings.weekly') }}" class="flex items-center gap-3">
+                    @csrf
+                    <label class="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 cursor-pointer">
+                        <input type="checkbox" name="weekly_enabled" value="1" {{ $weekly['enabled'] ? 'checked' : '' }} class="w-4 h-4 accent-brand-500">
+                        <span class="text-sm font-semibold text-white">Reports enabled</span>
+                    </label>
+                    <button class="btn-primary !py-2 text-xs">Save</button>
+                </form>
+                <form method="POST" action="{{ route('admin.settings.weekly-run') }}">
+                    @csrf
+                    <button class="btn !py-2 text-xs !bg-emerald-500/15 !text-emerald-300 border-emerald-500/30 hover:!bg-emerald-500/25">Send to all eligible stores now</button>
+                </form>
+            </div>
+        </section>
+
         {{-- ── Plan pricing ──────────────────────────────────────────────── --}}
         <section class="glass rounded-2xl p-5 md:p-6">
             <h2 class="font-display font-bold text-white text-lg">Plan pricing (INR / month)</h2>

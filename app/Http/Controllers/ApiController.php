@@ -381,6 +381,7 @@ class ApiController extends Controller
             'whatsapp_number' => $settings['whatsapp_number'] ?? null,
             'language' => $settings['language'] ?? 'en',
             'ga4_property_id' => $settings['ga4_property_id'] ?? null,
+            'report_email' => $settings['report_email'] ?? null,
         ]);
     }
 
@@ -393,6 +394,8 @@ class ApiController extends Controller
             ? $request->input('language') : ($settings['language'] ?? 'en');
         $ga4Id = trim((string) $request->input('ga4_property_id', $settings['ga4_property_id'] ?? ''));
         $settings['ga4_property_id'] = preg_match('/^\d{6,12}$/', $ga4Id) ? $ga4Id : null;
+        $reportEmail = trim((string) $request->input('report_email', $settings['report_email'] ?? ''));
+        $settings['report_email'] = $reportEmail !== '' && filter_var($reportEmail, FILTER_VALIDATE_EMAIL) ? $reportEmail : null;
         $store->update([
             'brand_name' => trim((string) $request->input('brand_name', $store->brand_name)),
             'domain' => trim((string) $request->input('domain', $store->domain)),

@@ -43,6 +43,26 @@ class OAuthService
             ]
         );
 
+        // Pre-fill the weekly report recipient from the shop owner email
+        // (only when the merchant hasn't set one already).
+        $settings = $store->settings ?? [];
+        if (empty($settings['report_email'])) {
+            $email = ShopifyService::shopEmail($store);
+            if ($email) {
+                $settings['report_email'] = $email;
+                $store->update(['settings' => $settings]);
+            }
+        }
+
+        // Agency install: ?agency=<agency-shop> links this store under that
+        // Agency-plan store so it can manage + report on it.
+        if (! empty($query['agency'])) {
+            $agency = Store::where('shop', strtolower(trim((string) $query['agency'])))->where('plan', 'agency')->first();
+            if ($agency && $agency->isNot($store)) {
+                $store->update(['parent_store_id' => $agency->id]);
+            }
+        }
+
         self::registerWebhooks($store);
 
         return $store;

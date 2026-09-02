@@ -22,3 +22,13 @@ Schedule::command('indexnow:flush --all')
     ->everyFifteenMinutes()
     ->when(fn () => app(\App\Services\IndexNowService::class)->enabled())
     ->withoutOverlapping();
+
+// Weekly AI Visibility Report email — Monday mornings (IST) when the owner
+// leaves the report switch on.
+Schedule::command('reports:weekly')
+    ->weekly()
+    ->mondays()
+    ->at(app(\App\Services\WeeklyReportService::class)->config()['time'] ?? '07:00')
+    ->timezone('Asia/Kolkata')
+    ->when(fn () => app(\App\Services\WeeklyReportService::class)->enabled())
+    ->withoutOverlapping();

@@ -25,6 +25,11 @@
           </select>
         </div>
         <div>
+          <label class="text-xs font-semibold text-slate-600">Weekly report email</label>
+          <input v-model="reportEmail" type="email" class="input mt-1" placeholder="you@brand.in — for the Monday AI Visibility Report" />
+          <div class="text-[11px] text-slate-500 mt-1">Every Monday we email your AI mention rate vs the previous week, per-engine deltas and citation samples. Leave blank to skip.</div>
+        </div>
+        <div>
           <label class="text-xs font-semibold text-slate-600">GA4 Property ID (optional)</label>
           <input v-model="ga4Id" class="input mt-1" placeholder="e.g. 123456789 — service account credentials come from .env" />
           <div class="text-[11px] text-slate-500 mt-1">Powers the GA4 Data API report in AI Traffic &amp; Orders.</div>
@@ -70,6 +75,7 @@ const shop = ref('');
 const whatsapp = ref('');
 const language = ref('en');
 const ga4Id = ref('');
+const reportEmail = ref('');
 
 onMounted(async () => {
     try {
@@ -80,6 +86,7 @@ onMounted(async () => {
         whatsapp.value = d.whatsapp_number || '';
         language.value = d.language || 'en';
         ga4Id.value = d.ga4_property_id || '';
+        reportEmail.value = d.report_email || '';
     } catch (e) { /* session */ }
 });
 
@@ -90,6 +97,7 @@ async function save() {
         whatsapp_number: whatsapp.value,
         language: language.value,
         ga4_property_id: ga4Id.value,
+        report_email: reportEmail.value,
     });
     emit('saved');
     alert('Saved ✓');

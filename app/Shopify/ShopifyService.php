@@ -80,6 +80,30 @@ class ShopifyService
         return new Graphql($store->shop, $store->shopify_token);
     }
 
+    /** REST client for legacy/admin endpoints (shop.json owner email etc.). */
+    public static function restClient(Store $store): \Shopify\Clients\Rest
+    {
+        self::init();
+        return new \Shopify\Clients\Rest($store->shop, $store->shopify_token);
+    }
+
+    /**
+     * Best-effort fetch of the store owner email via the shop REST endpoint.
+     * Used to pre-fill the weekly report recipient on install. No extra scope
+     * needed (standard shop read with any valid token).
+     */
+    public static function shopEmail(Store $store): ?string
+    {
+        try {
+            $res = self::restClient($store)->get(['path' => '/shop.json']);
+            $email = $res->getDecodedBody()['shop']['email'] ?? null;
+            return is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : null;
+        } catch (\Throwable $e) {
+            Log::debug('shop.json fetch failed: '.$e->getMessage());
+            return null;
+        }
+    }
+
     /** Load the current embedded-app session (JWT from Authorization header). Returns store or null. */
     public static function sessionStore(): ?Store
     {
