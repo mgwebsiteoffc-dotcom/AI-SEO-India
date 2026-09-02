@@ -1,7 +1,7 @@
 # AI-SEO-India — Delivery Report
 
-**Date:** 2026-09-01 · **Branch:** `arena/01a05cd6-ai-seo-india`
-**Live preview:** https://8123-ij9ba5t021hsj4rstrav6.e2b.app (sandbox server on port 8123)
+**Date:** 2026-09-01 (updated 2026-09-02) · **Branch:** `arena/01a05cd6-ai-seo-india`
+**Live preview:** https://8123-iw4dbltg87lvou1h9cl2j.e2b.app (sandbox server on port 8123)
 **Demo mode:** https://8123-ij9ba5t021hsj4rstrav6.e2b.app/app?demo=1 (store: `demo-brand.myshopify.com` / "Aurelia Naturals", domain `aurelianaturals.in`, plan **scale**)
 
 ---
@@ -14,6 +14,8 @@
 | **Laravel 12 command discovery:** `app/Console/Commands` is no longer auto-discovered. `demo:seed`, `visibility:track` and the scheduler silently didn't exist. | `bootstrap/app.php` now has `->withCommands([app_path('Console/Commands')])`. `artisan list` shows both commands; `schedule:list` shows the daily job. |
 | **Autoloader root mapping:** the generated vendor autoloader had no root `App\ → app/` PSR-4 entry, so `App\...` classes failed to resolve. | Autoloader regenerated with the root mapping. |
 | **No `.env` / APP_KEY / DB.** | `.env` created: APP_KEY set, SQLite database, APP_URL = the HTTPS preview host so every generated URL (assets, OG image, canonical) points at the public site — `URL::forceRootUrl()` + `forceScheme('https')` in `AppServiceProvider::boot()` (Laravel otherwise derives URL roots from the request Host, producing `127.0.0.1` links). Verified with curl. |
+| **Sandbox reset killed the site again (2026-09-02).** The Arena sandbox (and its preview host) was recreated, wiping `.env`, `node_modules`, `vendor/`, `public/build/` and the DB — so the old preview URL died and pages rendered unstyled (no CSS). Now fully recoverable: | Added `scripts/bootstrap.sh` (one-command restore: npm ci → WASM PHP → fetch 78 composer packages straight from GitHub via `scripts/fetch-vendor.mjs` → generate a PSR-4 autoloader + Laravel `installed.json` → `.env` with APP_URL derived from the live sandbox id → migrate → `demo:seed` → vite build), `scripts/server-router.php` (in-repo dev-server router), and an `App\Support\Vite` helper that emits **root-relative** asset URLs from the Vite manifest — `@vite()` was replaced in every view, so CSS/JS load on *any* host regardless of APP_URL. |
+| **`demo:seed` was not idempotent** — re-seeding the same day crashed on a UNIQUE constraint (`competitor_mentions`), aborting before blog posts were re-seeded. | Seed now wipes `CompetitorMention` rows for the store first; verified 2 consecutive runs both exit 0. |
 
 ### B. Real functional bugs
 | Problem | Fix |
@@ -56,6 +58,12 @@
 ## 3. How to run it
 
 ```bash
+# Sandbox / fresh clone (one command — rebuilds .env, vendor/, node_modules, build/, DB)
+scripts/bootstrap.sh
+
+# Dev server
+node_modules/.bin/php-wasm-cli -S 0.0.0.0:8123 -t public scripts/server-router.php
+
 # Frontend build (Vite)
 npm ci && npm run build
 

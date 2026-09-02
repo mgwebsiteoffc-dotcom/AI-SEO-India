@@ -121,6 +121,10 @@ class SeedDemo extends Command
 
         // Competitors
         $store->competitors()->delete();
+        // Mention rows carry their own (store_id, snapshot_date, engine,
+        // competitor_domain) unique key, so wipe them first or re-seeding the
+        // same day trips the constraint and aborts the whole command.
+        \App\Models\CompetitorMention::where('store_id', $store->id)->delete();
         Competitor::create(['store_id' => $store->id, 'name' => 'Minimalist', 'domain' => 'beminimalist.co']);
         Competitor::create(['store_id' => $store->id, 'name' => 'Plum', 'domain' => 'plumgoodness.com']);
         foreach ($store->competitors as $c) {
@@ -192,7 +196,7 @@ class SeedDemo extends Command
             ],
             [
                 'slug' => 'ai-seo-scorecard-what-it-measures',
-                'title' => 'Your AI SEO Scorecard: What It Measures (and What It Doesn&rsquo;t)',
+                'title' => 'Your AI SEO Scorecard: What It Measures (and What It Doesn’t)',
                 'meta_description' => 'What an AI Readiness Score actually checks — crawlability, schema, content, brand — and why nobody can guarantee AI rankings.',
                 'excerpt' => 'A scorecard is only useful if it measures real signals. Here is the honest breakdown of what moves the needle in AI visibility.',
                 'body' => '<p>Before paying for any &ldquo;AI SEO&rdquo; tool, understand what is measurable and what is marketing.</p><h2>The signals that actually matter</h2><ul><li><strong>Crawlability</strong> — robots.txt rules for GPTBot, OAI-SearchBot, ClaudeBot and PerplexityBot; a healthy sitemap.</li><li><strong>Structured data</strong> — Product, Offer (INR), FAQ and Organization JSON-LD that AI retrieval can parse directly.</li><li><strong>Content</strong> — H1s, descriptive titles, 300+ word product pages, FAQ blocks and comparison tables.</li><li><strong>Brand</strong> — name prominence, reviews and trust signals across the web.</li></ul><h2>What doesn&rsquo;t work</h2><p>As of 2026, no major AI engine has confirmed reading <code>llms.txt</code>, and large-scale studies show almost no citation lift from it. Treat it as cheap hygiene, not a strategy.</p><h2>Rankings can&rsquo;t be guaranteed</h2><p>Anyone promising &ldquo;rank #1 in ChatGPT&rdquo; is selling snake oil. AI visibility is a compounding outcome of real signals — measure it weekly and fix what the data says.</p>',
@@ -200,8 +204,8 @@ class SeedDemo extends Command
             [
                 'slug' => 'gemini-ai-overviews-d2c-traffic',
                 'title' => 'Gemini, AI Overviews and D2C Traffic: The 2026 Shift',
-                'meta_description' => 'Gemini referral traffic grew 388% in a year. What Indian D2C brands need to know about Google&rsquo;s AI surfaces.',
-                'excerpt' => 'ChatGPT still dominates AI referrals, but Gemini is the fastest riser — and it sits inside Google Search, Android and every Chrome user&rsquo;s pocket.',
+                'meta_description' => 'Gemini referral traffic grew 388% in a year. What Indian D2C brands need to know about Google’s AI surfaces.',
+                'excerpt' => 'ChatGPT still dominates AI referrals, but Gemini is the fastest riser — and it sits inside Google Search, Android and every Chrome user’s pocket.',
                 'body' => '<p>ChatGPT sends ~78% of AI referral traffic today, but Gemini&rsquo;s referral volume grew <strong>388% YoY</strong> — the fastest of any AI platform. For Indian D2C, Gemini matters more than any other market: it ships on Android, where over three-quarters of Indian ecommerce happens.</p><h2>AI Overviews changed the game</h2><p>Google&rsquo;s AI Overviews answer questions directly above the organic results. Being cited inside an AI Overview is the new &ldquo;position one&rdquo; — and it is built from the same index, so classic SEO hygiene plus structured data still wins.</p><h2>The Indian angle</h2><p>With 950M+ Gemini users globally and the highest learning usage in India, shopping queries in Hindi-English mixes are rising fast. Brands that publish bilingual FAQs and ₹-priced comparison tables position themselves for both Gemini and ChatGPT.</p><h2>Act now, measure monthly</h2><p>The window is open: most Indian D2C stores have zero AI visibility work done. Track your mention rate across ChatGPT, Gemini and Perplexity monthly, and compound the technical fixes. First-movers in AI search will be the default answers.</p>',
             ],
         ];

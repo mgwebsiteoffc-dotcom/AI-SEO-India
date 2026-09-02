@@ -11,7 +11,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @php($viteCss = \App\Support\Vite::css())
+    @php($viteJs = \App\Support\Vite::js())
+    @if ($viteCss)<link rel="stylesheet" href="{{ $viteCss }}">@endif
+    @foreach (\App\Support\Vite::cssForJs('resources/js/app.js') as $extraCss)
+        <link rel="stylesheet" href="{{ $extraCss }}">
+    @endforeach
+    @if ($viteJs)<script type="module" crossorigin src="{{ $viteJs }}"></script>@endif
 </head>
 <body>
     <div id="app"

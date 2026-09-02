@@ -9,7 +9,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
-    @vite(['resources/css/app.css'])
+    @php($viteCss = \App\Support\Vite::css())
+    @if ($viteCss)<link rel="stylesheet" href="{{ $viteCss }}">@endif
     <style>
         body { background: radial-gradient(900px 500px at 20% -10%, rgba(10,132,255,.25) 0%, transparent 60%), linear-gradient(160deg, #070d1a 0%, #0b1220 55%, #101a2e 100%); min-height: 100vh; }
         .card { background: rgba(255,255,255,0.98); border-radius: 22px; box-shadow: 0 30px 80px rgba(2,6,23,.5); }
