@@ -123,6 +123,22 @@ class ApiController extends Controller
         ];
     }
 
+    /** POST /api/audit/issue/{id}/toggle — mark issue as fixed/unfixed */
+    public function toggleIssue(Request $request, int $id)
+    {
+        $store = $this->store($request);
+        $issue = \App\Models\AuditIssue::whereHas('run', function ($q) use ($store) {
+            $q->where('store_id', $store->id);
+        })->findOrFail($id);
+
+        $issue->update(['is_fixed' => !$issue->is_fixed]);
+
+        return response()->json([
+            'ok' => true,
+            'is_fixed' => $issue->is_fixed,
+        ]);
+    }
+
     // ---------------------------------------------------------------- tracker
 
     public function tracker(Request $request)

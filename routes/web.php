@@ -90,6 +90,7 @@ Route::prefix('api')->middleware(VerifyShopifySession::class)->group(function ()
     Route::get('/dashboard', [ApiController::class, 'dashboard']);
     Route::get('/audit/latest', [ApiController::class, 'latestAudit']);
     Route::post('/audit/run', [ApiController::class, 'runAudit']);
+    Route::post('/audit/issue/{id}/toggle', [ApiController::class, 'toggleIssue']);
     Route::get('/tracker', [ApiController::class, 'tracker']);
     Route::post('/tracker/query', [ApiController::class, 'addQuery']);
     Route::delete('/tracker/query/{id}', [ApiController::class, 'deleteQuery']);

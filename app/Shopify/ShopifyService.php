@@ -106,7 +106,7 @@ class ShopifyService
             $cookies = $_COOKIE ?? [];
             $sessionId = OAuth::getCurrentSessionId($headers ?: [], $cookies, true);
             if (! $sessionId) {
-                return null;
+                return null; // No JWT yet — first load or non-embedded request. Normal.
             }
             // Extract shop from the JWT session id: "{userId}_{shop}"
             $shop = null;
@@ -116,7 +116,10 @@ class ShopifyService
             }
             return $shop ? Store::where('shop', $shop)->first() : null;
         } catch (\Throwable $e) {
-            Log::debug('Shopify session load failed: '.$e->getMessage());
+            // Only log unexpected errors, not the common "missing auth header" case
+            if (stripos($e->getMessage(), 'Missing Authorization') === false) {
+                Log::debug('Shopify session load failed: ' . $e->getMessage());
+            }
             return null;
         }
     }
