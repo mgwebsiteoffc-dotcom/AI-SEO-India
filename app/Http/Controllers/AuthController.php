@@ -182,6 +182,92 @@ class AuthController extends Controller
 
         return response()->json($result);
     }
+
+    /** GET /auth/test-publish?shop=... → test articleCreate mutation directly */
+    public function testPublish(Request $request)
+    {
+        $shop = strtolower(trim((string) $request->query('shop', '')));
+        $store = empty($shop)
+            ? \App\Models\Store::whereNotNull('shopify_token')->first()
+            : \App\Models\Store::where('shop', $shop)->first();
+
+        if (!$store) {
+            return response()->json(['error' => 'No store found'], 404);
+        }
+
+        $result = ['shop' => $store->shop, 'scopes' => $store->scopes];
+
+        try {
+            $client = \App\Shopify\ShopifyService::client($store);
+
+            // Step 1: Get a blog ID
+            $res = $client->query(['query' => '{ blogs(first: 5) { edges { node { id title handle } } } }']);
+            $blogs = $res->getDecodedBody()['data']['blogs']['edges'] ?? [];
+            $result['blogs_found'] = count($blogs);
+
+            if (empty($blogs)) {
+                return response()->json(array_merge($result, ['error' => 'No blogs found on store']));
+            }
+
+            // Use the AI Insights blog if available, otherwise first blog
+            $blogId = $blogs[0]['node']['id'];
+            $blogTitle = $blogs[0]['node']['title'];
+            foreach ($blogs as $b) {
+                if (stripos($b['node']['title'], 'Insight') !== false || stripos($b['node']['title'], 'AI') !== false) {
+                    $blogId = $b['node']['id'];
+                    $blogTitle = $b['node']['title'];
+                    break;
+                }
+            }
+            $result['using_blog'] = $blogTitle . ' (' . $blogId . ')';
+
+            // Step 2: Try to create a test article
+            $mutation = <<<'GRAPHQL'
+            mutation ArticleCreate($blogId: ID!, $article: ArticleInput!) {
+              articleCreate(blogId: $blogId, article: $article) {
+                article { id url handle }
+                userErrors { field message }
+              }
+            }
+            GRAPHQL;
+
+            $res = $client->query([
+                'query' => $mutation,
+                'variables' => [
+                    'blogId' => $blogId,
+                    'article' => [
+                        'title' => 'AI Visibility Test — ' . now()->format('d M H:i'),
+                        'bodyHtml' => '<p>Test article from AI Visibility app. Delete this.</p>',
+                        'tags' => ['ai-visibility', 'test'],
+                        'isPublished' => true,
+                    ],
+                ],
+            ]);
+
+            $body = $res->getDecodedBody();
+            $articleData = $body['data']['articleCreate'] ?? [];
+
+            if (!empty($articleData['userErrors'])) {
+                $result['success'] = false;
+                $result['error'] = collect($articleData['userErrors'])->pluck('message')->implode('; ');
+            } elseif (!empty($articleData['article']['id'])) {
+                $result['success'] = true;
+                $result['article_id'] = $articleData['article']['id'];
+                $result['article_url'] = $articleData['article']['url'] ?? 'not returned by Shopify';
+            } else {
+                $result['success'] = false;
+                $result['error'] = 'No article and no errors — unexpected response';
+                $result['raw_response'] = $body;
+            }
+
+        } catch (\Throwable $e) {
+            $result['success'] = false;
+            $result['error'] = $e->getMessage();
+        }
+
+        return response()->json($result);
+    }
+
     public function testLlm()
     {
         $llm = app(\App\Services\LlmClient::class);
