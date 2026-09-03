@@ -30,6 +30,9 @@
             <span>4 min read</span>
         </div>
         <h1 class="font-display text-3xl md:text-4xl font-extrabold mt-4 leading-tight text-white">{{ $post->title }}</h1>
+        @if ($post->excerpt)
+            <p class="text-lg text-slate-400 mt-4 leading-relaxed">{{ $post->excerpt }}</p>
+        @endif
         <div class="prose-dark mt-8">{!! $post->body !!}</div>
 
         <div class="mt-14 rounded-3xl border border-brand-500/40 bg-gradient-to-br from-brand-600/15 to-surface-800 p-8 text-center">
