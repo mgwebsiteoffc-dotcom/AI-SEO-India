@@ -33,7 +33,11 @@ class Store extends Model
 
     public function hostname(): string
     {
-        return $this->domain ?? $this->shop;
+        $host = $this->domain ?? $this->shop;
+        // Strip protocol if user entered full URL (e.g. "https://midorii.in")
+        $host = preg_replace('#^https?://#', '', (string) $host);
+        $host = rtrim($host, '/');
+        return $host;
     }
 
     public function queryLimit(): int

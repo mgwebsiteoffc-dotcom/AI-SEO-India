@@ -22,12 +22,14 @@ class LlmsGenerator
 
         if ($entries->isEmpty()) {
             // Build from the Shopify catalog via GraphQL
-            $entries = $this->buildFromCatalog($store);
+            $built = $this->buildFromCatalog($store);
+            $entries = collect($built);
             if ($persist) {
                 $store->llmsEntries()->delete();
-                foreach ($entries as $i => $e) {
+                foreach ($built as $i => $e) {
                     $store->llmsEntries()->create(array_merge($e, ['position' => $i]));
                 }
+                $entries = $store->llmsEntries()->orderBy('position')->get();
             }
         }
 
@@ -43,8 +45,8 @@ class LlmsGenerator
         $lines[] = '';
         $lines[] = '- Name: '.$brand;
         $lines[] = '- Domain: https://'.$domain;
-        $lines[] = '- Products: '.$entries->filter(fn ($e) => ($e['kind'] ?? $e->kind) === 'product')->count().' listed below';
-        $lines[] = '- Categories: '.$entries->filter(fn ($e) => ($e['kind'] ?? $e->kind) === 'collection')->count().' collections';
+        $lines[] = '- Products: '.$entries->filter(fn ($e) => (is_array($e) ? $e['kind'] : $e->kind) === 'product')->count().' listed below';
+        $lines[] = '- Categories: '.$entries->filter(fn ($e) => (is_array($e) ? $e['kind'] : $e->kind) === 'collection')->count().' collections';
         $lines[] = '';
         $lines[] = '## Product Pages';
         $lines[] = '';

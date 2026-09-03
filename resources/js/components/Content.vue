@@ -51,11 +51,11 @@
           <option value="youthful">Gen-Z Indian</option>
         </select>
         <button type="submit" class="btn-primary sm:col-span-2" :disabled="busy">
-          {{ busy ? 'Writing article…' : (llmMode ? 'Generate with AI ✨' : 'Generate (template mode — add OpenAI key for AI-written copy)') }}
+          {{ busy ? 'Writing article…' : (llmMode ? 'Generate with AI ✨' : 'Generate (template mode — add API key for AI-written copy)') }}
         </button>
       </form>
       <p v-if="!llmMode" class="text-[11px] text-slate-500 mt-2">
-        No OPENAI_API_KEY / GEMINI_API_KEY configured — using the honest template engine. Add a key in .env for fully AI-written Hinglish copy.
+        No LLM API key configured — using the honest template engine. Add an OpenRouter, OpenAI, or Gemini key in super admin → AI Settings for fully AI-written copy.
       </p>
     </div>
 

@@ -148,7 +148,7 @@ class ApiController extends Controller
                 'total' => $s->total_queries,
                 'samples' => $s->samples,
             ])->values(),
-            'llm_mode' => (bool) (config('services.openai.key') || config('services.gemini.key')),
+            'llm_mode' => (bool) (config('services.openrouter.key') || config('services.openai.key') || config('services.gemini.key')),
         ]);
     }
 

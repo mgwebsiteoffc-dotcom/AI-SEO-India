@@ -118,7 +118,7 @@ async function load() {
 
 function onAudited() {
     load();
-    tab.value = 'dashboard';
+    // Stay on audit tab to show results — don't redirect to dashboard
 }
 
 function logout() {
