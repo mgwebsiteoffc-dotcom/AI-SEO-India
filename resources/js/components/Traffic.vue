@@ -63,15 +63,14 @@
       </div>
       <p class="text-xs text-slate-500 mt-1">Sessions, transactions and purchase revenue where the session source is an AI platform (ChatGPT, Gemini, Perplexity, Grok, Claude, DeepSeek, Copilot).</p>
 
-      <div v-if="!ga4.configured && ga4.message" class="mt-3 text-xs text-amber-700 bg-amber-50 rounded-xl p-3 leading-relaxed">
-        {{ ga4.message }}
-        <div class="mt-2 font-semibold">How to connect (5 min):</div>
-        <ol class="list-decimal pl-5 mt-1 space-y-1">
-          <li>Google Cloud Console → create a service account → download the JSON key.</li>
-          <li>GA4 Admin → Property access management → add the service account as <b>Viewer</b>.</li>
-          <li>In <code class="bg-amber-100 px-1 rounded">.env</code> set <code class="bg-amber-100 px-1 rounded">GA4_PROPERTY_ID</code>, <code class="bg-amber-100 px-1 rounded">GA4_CLIENT_EMAIL</code>, <code class="bg-amber-100 px-1 rounded">GA4_PRIVATE_KEY</code> (or <code class="bg-amber-100 px-1 rounded">GA4_SERVICE_ACCOUNT=/path/to.json</code>).</li>
-          <li>Or just paste your numeric Property ID in Settings → the credentials come from .env.</li>
-        </ol>
+      <div v-if="!ga4.configured" class="mt-3 text-xs text-amber-700 bg-amber-50 rounded-xl p-3 leading-relaxed">
+        <template v-if="ga4.has_property_id">
+          <p>Your GA4 Property ID is saved. The app is being configured to connect to Google Analytics — this may take a few minutes. If this message persists, contact support.</p>
+        </template>
+        <template v-else>
+          <p>To see AI traffic from Google Analytics, enter your <b>GA4 Property ID</b> in the <b>Settings</b> tab.</p>
+          <p class="mt-2">Find it in Google Analytics → Admin → Property Settings → Property ID (a 9-digit number).</p>
+        </template>
       </div>
 
       <template v-else-if="ga4.totals">

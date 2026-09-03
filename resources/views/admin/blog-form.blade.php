@@ -10,6 +10,9 @@
         <div class="flex items-center gap-3 mb-6">
             <a href="{{ route('admin.blogs') }}" class="text-xs text-slate-400 hover:text-white">← Back to posts</a>
             <h1 class="font-display text-xl font-extrabold text-white">{{ $post ? 'Edit Post' : 'New Post' }}</h1>
+            @if ($post && $post->published_at)
+                <a href="{{ route('blog.show', $post->slug) }}" target="_blank" class="text-xs text-brand-400 hover:text-brand-300 ml-auto">View on site →</a>
+            @endif
         </div>
 
         <form method="POST" action="{{ $post ? route('admin.blogs.update', $post) : route('admin.blogs.store') }}" class="space-y-6">

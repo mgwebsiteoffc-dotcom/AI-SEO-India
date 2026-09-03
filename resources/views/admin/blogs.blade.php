@@ -10,6 +10,7 @@
             <div>
                 <h1 class="font-display text-2xl font-extrabold text-white">Blog / SEO Content</h1>
                 <p class="text-sm text-slate-400 mt-1">Manage blog posts with SEO meta, FAQ schema, and AEO guidelines.</p>
+                <p class="text-[11px] text-slate-500 mt-1">Published posts appear on the <a href="{{ route('blog') }}" target="_blank" class="text-brand-400 hover:underline">marketing blog page</a> — not on the Shopify store's blog.</p>
             </div>
             <a href="{{ route('admin.blogs.create') }}" class="btn-primary !py-2 text-xs">+ New Post</a>
         </div>

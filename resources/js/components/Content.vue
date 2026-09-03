@@ -9,7 +9,7 @@
         </button>
       </div>
       <div v-if="sentiment.available === false" class="mt-3 text-xs text-amber-700 bg-amber-50 rounded-xl p-3 leading-relaxed">
-        {{ sentiment.message || 'AI Sentiment needs an API key.' }}
+        {{ sentiment.message || 'AI Sentiment needs an LLM API key. Add one in super admin → AI Settings.' }}
       </div>
       <div v-else-if="sentiment.available" class="mt-4 grid md:grid-cols-3 gap-4">
         <div class="rounded-xl border border-slate-200 p-4">
@@ -55,7 +55,7 @@
         </button>
       </form>
       <p v-if="!llmMode" class="text-[11px] text-slate-500 mt-2">
-        No LLM API key configured — using the honest template engine. Add an OpenRouter, OpenAI, or Gemini key in super admin → AI Settings for fully AI-written copy.
+        No LLM API key configured — using the honest template engine. The app owner needs to add an OpenRouter, OpenAI, or Gemini key in super admin → AI Settings for fully AI-written copy.
       </p>
     </div>
 

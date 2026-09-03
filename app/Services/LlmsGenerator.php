@@ -146,17 +146,13 @@ class LlmsGenerator
             Log::warning('Catalog fetch failed for '.$store->shop.': '.$e->getMessage());
         }
 
-        // Fallback seed when the API is unavailable (demo)
+        // When the API is unavailable, show a minimal entry with just the brand info
+        // instead of misleading dummy products that don't match the store's catalog
         if (empty($entries)) {
             $brand = $store->brand_name ?: ucfirst(strtok($store->shop, '.'));
             $entries = [
-                ['kind' => 'product', 'title' => $brand.' Signature Serum 30ml', 'path' => '/products/signature-serum', 'description' => 'Vitamin C + niacinamide serum for Indian skin, ₹799.'],
-                ['kind' => 'product', 'title' => $brand.' Hydrating Moisturiser', 'path' => '/products/hydrating-moisturiser', 'description' => 'Lightweight gel moisturiser for humid Indian summers, ₹649.'],
-                ['kind' => 'product', 'title' => $brand.' Sunscreen SPF 50', 'path' => '/products/sunscreen-spf50', 'description' => 'Non-greasy broad spectrum SPF 50, ₹599.'],
-                ['kind' => 'collection', 'title' => 'Shop All', 'path' => '/collections/all'],
-                ['kind' => 'collection', 'title' => 'Best Sellers', 'path' => '/collections/best-sellers'],
-                ['kind' => 'page', 'title' => 'About Us', 'path' => '/pages/about'],
-                ['kind' => 'page', 'title' => 'FAQ', 'path' => '/pages/faq'],
+                ['kind' => 'page', 'title' => $brand, 'path' => '/', 'description' => 'Store homepage.'],
+                ['kind' => 'page', 'title' => 'All Products', 'path' => '/collections/all', 'description' => 'Browse all products.'],
             ];
         }
 

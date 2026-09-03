@@ -101,7 +101,11 @@ class ContentController extends Controller
         );
 
         if ($text === null) {
-            return response()->json(['available' => false, 'message' => 'LLM call failed — try again shortly.']);
+            $provider = $llm->provider();
+            return response()->json([
+                'available' => false,
+                'message' => "LLM call failed (using {$provider}). Check that your API key is valid in super admin → AI Settings, then try again.",
+            ]);
         }
 
         $data = json_decode(trim($text, "` \n"), true);

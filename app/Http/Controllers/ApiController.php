@@ -351,7 +351,13 @@ class ApiController extends Controller
         if ($store->is_demo && ! $service->configured()) {
             return response()->json($service->demoReport());
         }
-        return response()->json($service->aiTrafficReport(['days' => (int) $request->input('days', 30)]));
+
+        $report = $service->aiTrafficReport(['days' => (int) $request->input('days', 30)]);
+
+        // Let the frontend know if the store has entered their GA4 Property ID
+        $report['has_property_id'] = ! empty($store->settings['ga4_property_id']);
+
+        return response()->json($report);
     }
 
     // ---------------------------------------------------------------- settings
