@@ -373,6 +373,9 @@ class ApiController extends Controller
         // Let the frontend know if the store has entered their GA4 Property ID
         $report['has_property_id'] = ! empty($store->settings['ga4_property_id']);
 
+        // Expose the service account email so stores know what to add as Viewer
+        $report['service_account_email'] = config('services.ga4.client_email') ?: null;
+
         return response()->json($report);
     }
 
@@ -389,6 +392,7 @@ class ApiController extends Controller
             'whatsapp_number' => $settings['whatsapp_number'] ?? null,
             'language' => $settings['language'] ?? 'en',
             'ga4_property_id' => $settings['ga4_property_id'] ?? null,
+            'gsc_property' => $settings['gsc_property'] ?? null,
         ]);
     }
 
@@ -401,6 +405,8 @@ class ApiController extends Controller
             ? $request->input('language') : ($settings['language'] ?? 'en');
         $ga4Id = trim((string) $request->input('ga4_property_id', $settings['ga4_property_id'] ?? ''));
         $settings['ga4_property_id'] = preg_match('/^\d{6,12}$/', $ga4Id) ? $ga4Id : null;
+        $gscProperty = trim((string) $request->input('gsc_property', $settings['gsc_property'] ?? ''));
+        $settings['gsc_property'] = $gscProperty !== '' ? $gscProperty : null;
         $store->update([
             'brand_name' => trim((string) $request->input('brand_name', $store->brand_name)),
             'domain' => trim((string) $request->input('domain', $store->domain)),

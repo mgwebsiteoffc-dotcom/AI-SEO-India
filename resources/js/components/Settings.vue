@@ -25,9 +25,20 @@
           </select>
         </div>
         <div>
-          <label class="text-xs font-semibold text-slate-600">GA4 Property ID (optional)</label>
-          <input v-model="ga4Id" class="input mt-1" placeholder="e.g. 123456789 — service account credentials come from .env" />
-          <div class="text-[11px] text-slate-500 mt-1">Powers the GA4 Data API report in AI Traffic &amp; Orders.</div>
+          <label class="text-xs font-semibold text-slate-600">GA4 Property ID</label>
+          <input v-model="ga4Id" class="input mt-1" placeholder="e.g. 123456789" />
+          <div class="text-[11px] text-slate-500 mt-1">
+            Your Google Analytics 4 Property ID (9-digit number). Find it in GA4 → Admin → Property Settings.
+            After saving, you'll need to add our service account as a Viewer on your GA4 property (instructions shown in AI Traffic tab).
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-600">Google Search Console Property URL (optional)</label>
+          <input v-model="gscProperty" class="input mt-1" placeholder="e.g. https://yourdomain.com or sc-domain:yourdomain.com" />
+          <div class="text-[11px] text-slate-500 mt-1">
+            Your Search Console property (domain or URL prefix). Used to show search impressions, clicks and AI-related queries.
+            Add the same service account email as a <b>User</b> in Search Console → Settings → Users and permissions.
+          </div>
         </div>
         <div class="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
           <span>Shopify store</span>
@@ -70,6 +81,7 @@ const shop = ref('');
 const whatsapp = ref('');
 const language = ref('en');
 const ga4Id = ref('');
+const gscProperty = ref('');
 
 onMounted(async () => {
     try {
@@ -80,6 +92,7 @@ onMounted(async () => {
         whatsapp.value = d.whatsapp_number || '';
         language.value = d.language || 'en';
         ga4Id.value = d.ga4_property_id || '';
+        gscProperty.value = d.gsc_property || '';
     } catch (e) { /* session */ }
 });
 
@@ -90,6 +103,7 @@ async function save() {
         whatsapp_number: whatsapp.value,
         language: language.value,
         ga4_property_id: ga4Id.value,
+        gsc_property: gscProperty.value,
     });
     emit('saved');
     alert('Saved ✓');
