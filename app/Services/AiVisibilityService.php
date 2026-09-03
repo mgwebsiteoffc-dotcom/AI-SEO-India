@@ -228,11 +228,11 @@ PROMPT;
         $brand = $store->brand_name ?: ucfirst(strtok($store->shop, '.'));
         $seeds = [
             ["query" => "best {$brand} products review", 'category' => 'brand'],
-            ["query" => "best skincare brands in India for oily skin", 'category' => 'category'],
             ["query" => "{$brand} price in India", 'category' => 'brand'],
             ["query" => "is {$brand} good quality", 'category' => 'brand'],
-            ["query" => "top D2C beauty brands India 2026", 'category' => 'category'],
             ["query" => "buy {$brand} online India", 'category' => 'brand'],
+            ["query" => "top D2C brands India 2026", 'category' => 'category'],
+            ["query" => "{$brand} vs competitors India", 'category' => 'comparison'],
         ];
         $created = collect();
         foreach ($seeds as $seed) {

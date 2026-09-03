@@ -218,12 +218,19 @@ class AdminController extends Controller
 
         file_put_contents($envPath, $env);
 
-        // Clear config cache so changes take effect
+        // Clear config cache so changes take effect immediately
         if (function_exists('opcache_invalidate')) {
             @opcache_invalidate($envPath, true);
         }
 
-        return back()->with('status', 'AI/LLM settings saved. Changes take effect on next request.');
+        // Clear Laravel config cache so the new values are read
+        try {
+            \Illuminate\Support\Facades\Artisan::call('config:clear');
+        } catch (\Throwable $e) {
+            // Ignore — may not work in all environments
+        }
+
+        return back()->with('status', 'AI/LLM settings saved. Changes take effect immediately.');
     }
 
     // -------------------------------------------------------- Blog management

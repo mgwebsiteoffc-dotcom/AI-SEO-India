@@ -210,13 +210,19 @@ class SmartBlogger
             if (! empty($data['userErrors'])) {
                 $errMsg = collect($data['userErrors'])->pluck('message')->implode('; ');
                 Log::warning('Shopify articleCreate errors', ['errors' => $data['userErrors'], 'shop' => $store->shop]);
+
+                // Detect scope/permission errors
+                if (stripos($errMsg, 'access') !== false || stripos($errMsg, 'permission') !== false || stripos($errMsg, 'scope') !== false) {
+                    return ['ok' => false, 'error' => 'Permission denied. The app needs write_content scope. Please reinstall the app from the Shopify admin to grant the new permissions.'];
+                }
+
                 return ['ok' => false, 'error' => 'Shopify error: ' . $errMsg];
             }
 
             $article = $data['article'] ?? null;
             if (! $article || empty($article['id'])) {
-                Log::warning('Shopify articleCreate returned no article', ['response' => $data, 'shop' => $store->shop]);
-                return ['ok' => false, 'error' => 'Shopify did not return an article. Check app permissions (write_content scope).'];
+                Log::warning('Shopify articleCreate returned no article', ['response' => json_encode($data), 'shop' => $store->shop]);
+                return ['ok' => false, 'error' => 'Shopify did not return an article. This usually means the app needs to be reinstalled to grant write_content permission. Go to Shopify admin → Apps → uninstall this app, then reinstall it.'];
             }
 
             // Build the article URL if Shopify didn't return one
@@ -246,7 +252,16 @@ class SmartBlogger
     {
         try {
             $res = $client->query(['query' => '{ blogs(first: 10) { edges { node { id title } } } }']);
-            $blogs = $res->getDecodedBody()['data']['blogs']['edges'] ?? [];
+            $body = $res->getDecodedBody();
+
+            // Check for errors (e.g., missing scopes)
+            if (! empty($body['errors'])) {
+                $errMsg = collect($body['errors'])->pluck('message')->implode('; ');
+                Log::warning('Blog list errors (likely missing read_content scope)', ['errors' => $body['errors'], 'shop' => $store->shop]);
+                return '';
+            }
+
+            $blogs = $body['data']['blogs']['edges'] ?? [];
         } catch (\Throwable $e) {
             Log::warning('Failed to list blogs: ' . $e->getMessage());
             return '';
@@ -453,7 +468,11 @@ class SmartBlogger
             $res = $client->query([
                 'query' => '{ products(first: '.$limit.') { edges { node { title handle description(truncateAt: 140) } } } }',
             ]);
-            foreach (($res->getDecodedBody()['data']['products']['edges'] ?? []) as $e) {
+            $body = $res->getDecodedBody();
+            if (! empty($body['errors'])) {
+                Log::warning('Catalog fetch errors', ['errors' => $body['errors'], 'shop' => $store->shop]);
+            }
+            foreach (($body['data']['products']['edges'] ?? []) as $e) {
                 $products[] = [
                     'title' => $e['node']['title'],
                     'handle' => $e['node']['handle'],
@@ -462,7 +481,7 @@ class SmartBlogger
                 ];
             }
         } catch (\Throwable $e) {
-            // fall through to llms entries (seeded/demo)
+            Log::warning('Catalog fetch failed for '.$store->shop.': '.$e->getMessage());
         }
         if (empty($products)) {
             foreach ($store->llmsEntries()->where('kind', 'product')->take($limit)->get() as $e) {

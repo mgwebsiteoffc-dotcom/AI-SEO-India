@@ -108,7 +108,13 @@ class LlmsGenerator
             }
             GRAPHQL;
             $res = $client->query(['query' => $query]);
-            $data = $res->getDecodedBody()['data'] ?? [];
+            $body = $res->getDecodedBody();
+
+            if (! empty($body['errors'])) {
+                Log::warning('LlmsGenerator catalog fetch errors', ['errors' => $body['errors'], 'shop' => $store->shop]);
+            }
+
+            $data = $body['data'] ?? [];
 
             foreach (($data['products']['edges'] ?? []) as $e) {
                 $entries[] = [
