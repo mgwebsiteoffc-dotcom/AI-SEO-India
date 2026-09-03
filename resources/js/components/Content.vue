@@ -146,11 +146,17 @@ async function publish(p) {
     try {
         const d = await api.post(`/api/content/${p.id}/publish`);
         if (!d.ok) {
-            alert('Publish failed: ' + (d.error || 'unknown'));
+            alert('Publish failed: ' + (d.error || 'Unknown error — check Shopify app permissions (write_content scope).'));
+        } else {
+            // Show success with link
+            await load();
+            if (d.url) {
+                window.open(d.url, '_blank');
+            }
         }
         await load();
     } catch (e) {
-        alert(e.message);
+        alert('Publish error: ' + e.message);
     } finally {
         publishing.value = null;
     }

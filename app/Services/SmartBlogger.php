@@ -173,10 +173,21 @@ class SmartBlogger
             $client = ShopifyService::client($store);
             $blogId = $this->ensureBlog($client, $store);
 
+            if (empty($blogId)) {
+                return ['ok' => false, 'error' => 'Could not find or create a blog on your Shopify store. Check that the app has write_content scope.'];
+            }
+
+            $bodyHtml = $this->toHtml($post->body);
+
+            // Validate HTML is not empty
+            if (strlen(strip_tags($bodyHtml)) < 50) {
+                return ['ok' => false, 'error' => 'Article body is too short or empty after conversion. Try regenerating the article.'];
+            }
+
             $mutation = <<<'GRAPHQL'
-            mutation ArticleCreate($blogId: ID!, $title: String!, $bodyHtml: String!, $tags: [String!]) {
-              articleCreate(blogId: $blogId, article: { title: $title, bodyHtml: $bodyHtml, tags: $tags }) {
-                article { id url }
+            mutation ArticleCreate($blogId: ID!, $article: ArticleInput!) {
+              articleCreate(blogId: $blogId, article: $article) {
+                article { id url handle }
                 userErrors { field message }
               }
             }
@@ -186,60 +197,252 @@ class SmartBlogger
                 'query' => $mutation,
                 'variables' => [
                     'blogId' => $blogId,
-                    'title' => $post->title,
-                    'bodyHtml' => $this->toHtml($post->body),
-                    'tags' => ['ai-visibility', strtolower(str_replace(' ', '-', $post->category)), 'seo'],
+                    'article' => [
+                        'title' => $post->title,
+                        'bodyHtml' => $bodyHtml,
+                        'tags' => ['ai-visibility', strtolower(str_replace(' ', '-', $post->category)), 'seo'],
+                        'isPublished' => true,
+                    ],
                 ],
             ]);
 
             $data = $res->getDecodedBody()['data']['articleCreate'] ?? [];
             if (! empty($data['userErrors'])) {
-                return ['ok' => false, 'error' => $data['userErrors'][0]['message']];
+                $errMsg = collect($data['userErrors'])->pluck('message')->implode('; ');
+                Log::warning('Shopify articleCreate errors', ['errors' => $data['userErrors'], 'shop' => $store->shop]);
+                return ['ok' => false, 'error' => 'Shopify error: ' . $errMsg];
+            }
+
+            $article = $data['article'] ?? null;
+            if (! $article || empty($article['id'])) {
+                Log::warning('Shopify articleCreate returned no article', ['response' => $data, 'shop' => $store->shop]);
+                return ['ok' => false, 'error' => 'Shopify did not return an article. Check app permissions (write_content scope).'];
+            }
+
+            // Build the article URL if Shopify didn't return one
+            $articleUrl = $article['url'] ?? null;
+            if (! $articleUrl && ! empty($article['handle'])) {
+                $articleUrl = 'https://' . $store->shop . '/blogs/' . $this->blogHandle($client, $blogId) . '/' . $article['handle'];
             }
 
             $post->update([
                 'status' => 'published',
-                'shopify_article_id' => $data['article']['id'] ?? null,
-                'shopify_article_url' => $data['article']['url'] ?? null,
+                'shopify_article_id' => $article['id'],
+                'shopify_article_url' => $articleUrl,
             ]);
 
-            return ['ok' => true, 'article' => $data['article'] ?? null];
+            return ['ok' => true, 'article' => $article, 'url' => $articleUrl];
         } catch (\Throwable $e) {
-            Log::warning('Article publish failed: '.$e->getMessage());
-            return ['ok' => false, 'error' => $e->getMessage()];
+            Log::error('Article publish failed: ' . $e->getMessage(), [
+                'shop' => $store->shop,
+                'post_id' => $post->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return ['ok' => false, 'error' => 'Publish failed: ' . $e->getMessage()];
         }
     }
 
     private function ensureBlog(\Shopify\Clients\Graphql $client, Store $store): string
     {
-        $res = $client->query(['query' => '{ blogs(first: 10) { edges { node { id title } } } }']);
-        $blogs = $res->getDecodedBody()['data']['blogs']['edges'] ?? [];
+        try {
+            $res = $client->query(['query' => '{ blogs(first: 10) { edges { node { id title } } } }']);
+            $blogs = $res->getDecodedBody()['data']['blogs']['edges'] ?? [];
+        } catch (\Throwable $e) {
+            Log::warning('Failed to list blogs: ' . $e->getMessage());
+            return '';
+        }
+
+        // Look for an existing AI/Insights blog
         foreach ($blogs as $b) {
             if (stripos($b['node']['title'], 'AI') !== false || stripos($b['node']['title'], 'Insight') !== false) {
                 return $b['node']['id'];
             }
         }
-        $res = $client->query([
-            'query' => 'mutation BlogCreate($title: String!) { blogCreate(blog: { title: $title }) { blog { id } userErrors { message } } }',
-            'variables' => ['title' => $store->brand_name.' AI Insights'],
-        ]);
-        return $res->getDecodedBody()['data']['blogCreate']['blog']['id'] ?? $blogs[0]['node']['id'] ?? '';
+
+        // Create a new blog
+        try {
+            $blogTitle = ($store->brand_name ?: 'AI') . ' Insights';
+            $res = $client->query([
+                'query' => 'mutation BlogCreate($title: String!) { blogCreate(blog: { title: $title }) { blog { id } userErrors { message } } }',
+                'variables' => ['title' => $blogTitle],
+            ]);
+            $data = $res->getDecodedBody()['data']['blogCreate'] ?? [];
+            if (! empty($data['blog']['id'])) {
+                return $data['blog']['id'];
+            }
+            if (! empty($data['userErrors'])) {
+                Log::warning('Blog creation errors', ['errors' => $data['userErrors']]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Blog creation failed: ' . $e->getMessage());
+        }
+
+        // Fallback to first existing blog
+        return $blogs[0]['node']['id'] ?? '';
     }
 
+    /** Get the blog handle (slug) for building article URLs. */
+    private function blogHandle(\Shopify\Clients\Graphql $client, string $blogId): string
+    {
+        try {
+            $res = $client->query(['query' => "{ blog(id: \"{$blogId}\") { handle } }"]);
+            return $res->getDecodedBody()['data']['blog']['handle'] ?? 'news';
+        } catch (\Throwable $e) {
+            return 'news';
+        }
+    }
+
+    /**
+     * Convert Markdown to clean HTML for Shopify.
+     * Does NOT use e() (HTML escape) — that would mangle the output.
+     * Instead, converts markdown syntax directly to HTML tags.
+     */
     private function toHtml(string $markdown): string
     {
-        $html = e($markdown);
-        $html = preg_replace('/^# (.+)$/m', '<h1>$1</h1>', $html);
-        $html = preg_replace('/^## (.+)$/m', '<h2>$1</h2>', $html);
-        $html = preg_replace('/^### (.+)$/m', '<h3>$1</h3>', $html);
-        $html = preg_replace('/^\*\*(.+)\*\*$/m', '<p><strong>$1</strong></p>', $html);
-        $html = preg_replace('/^- (.+)$/m', '<li>$1</li>', $html);
-        $html = preg_replace('/(<li>.*<\/li>)/s', '<ul>$1</ul>', $html);
-        $html = preg_replace('/^Q: (.+)$/m', '<p><strong>Q: $1</strong></p>', $html);
-        $html = preg_replace('/^A: (.+)$/m', '<p>A: $1</p>', $html);
-        $html = preg_replace('/\[([^\]]+)\]\(([^)]+)\)/', '<a href="$2">$1</a>', $html);
-        $html = preg_replace('/^(?!<)([^<\n].{20,})$/m', '<p>$1</p>', $html);
+        $lines = explode("\n", $markdown);
+        $html = [];
+        $inList = false;
+        $inTable = false;
+        $tableRows = [];
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+
+            // Blank line — close list/table if open
+            if ($trimmed === '') {
+                if ($inList) {
+                    $html[] = '</ul>';
+                    $inList = false;
+                }
+                if ($inTable) {
+                    $html[] = $this->buildTable($tableRows);
+                    $tableRows = [];
+                    $inTable = false;
+                }
+                continue;
+            }
+
+            // Table separator line (|---|---|) — skip
+            if (preg_match('/^\|[\s\-:]+\|$/', $trimmed) || preg_match('/^\|(\s*[-:]+[-| :]*\s*)+\|?$/', $trimmed)) {
+                continue;
+            }
+
+            // Table row
+            if (str_starts_with($trimmed, '|') && str_ends_with($trimmed, '|')) {
+                $inTable = true;
+                $cells = array_map('trim', explode('|', trim($trimmed, '|')));
+                $tableRows[] = $cells;
+                continue;
+            }
+
+            // Close table if we hit non-table content
+            if ($inTable) {
+                $html[] = $this->buildTable($tableRows);
+                $tableRows = [];
+                $inTable = false;
+            }
+
+            // Headings
+            if (preg_match('/^# (.+)$/', $trimmed, $m)) {
+                if ($inList) { $html[] = '</ul>'; $inList = false; }
+                $html[] = '<h1>' . htmlspecialchars($m[1]) . '</h1>';
+                continue;
+            }
+            if (preg_match('/^## (.+)$/', $trimmed, $m)) {
+                if ($inList) { $html[] = '</ul>'; $inList = false; }
+                $html[] = '<h2>' . htmlspecialchars($m[1]) . '</h2>';
+                continue;
+            }
+            if (preg_match('/^### (.+)$/', $trimmed, $m)) {
+                if ($inList) { $html[] = '</ul>'; $inList = false; }
+                $html[] = '<h3>' . htmlspecialchars($m[1]) . '</h3>';
+                continue;
+            }
+
+            // List items
+            if (preg_match('/^- (.+)$/', $trimmed, $m)) {
+                if (!$inList) {
+                    $html[] = '<ul>';
+                    $inList = true;
+                }
+                $html[] = '<li>' . $this->inlineMarkdown($m[1]) . '</li>';
+                continue;
+            }
+
+            // Close list if we hit non-list content
+            if ($inList) {
+                $html[] = '</ul>';
+                $inList = false;
+            }
+
+            // Q: / A: lines (FAQ)
+            if (preg_match('/^Q:\s*(.+)$/i', $trimmed, $m)) {
+                $html[] = '<p><strong>Q: ' . htmlspecialchars($m[1]) . '</strong></p>';
+                continue;
+            }
+            if (preg_match('/^A:\s*(.+)$/i', $trimmed, $m)) {
+                $html[] = '<p>A: ' . $this->inlineMarkdown($m[1]) . '</p>';
+                continue;
+            }
+
+            // Regular paragraph
+            $html[] = '<p>' . $this->inlineMarkdown($trimmed) . '</p>';
+        }
+
+        if ($inList) {
+            $html[] = '</ul>';
+        }
+        if ($inTable) {
+            $html[] = $this->buildTable($tableRows);
+        }
+
+        return implode("\n", $html);
+    }
+
+    /** Build an HTML table from parsed rows. */
+    private function buildTable(array $rows): string
+    {
+        if (empty($rows)) return '';
+        $html = '<table style="border-collapse:collapse;width:100%;margin:1em 0;">';
+        foreach ($rows as $i => $row) {
+            $tag = ($i === 0) ? 'th' : 'td';
+            $html .= '<tr>';
+            foreach ($row as $cell) {
+                $html .= "<{$tag} style=\"border:1px solid #ddd;padding:8px;text-align:left;\">" . htmlspecialchars($cell) . "</{$tag}>";
+            }
+            $html .= '</tr>';
+        }
+        $html .= '</table>';
         return $html;
+    }
+
+    /** Convert inline markdown (bold, links) to HTML. */
+    private function inlineMarkdown(string $text): string
+    {
+        // Convert markdown links first: [text](url)
+        $text = preg_replace_callback('/\[([^\]]+)\]\(([^)]+)\)/', function ($m) {
+            $linkText = htmlspecialchars($m[1]);
+            $url = $m[2]; // Don't escape URLs — they're trusted (generated by our app)
+            return '<a href="' . $url . '">' . $linkText . '</a>';
+        }, $text);
+
+        // Escape HTML entities in the remaining text (outside of HTML tags we just created)
+        // Split by HTML tags, escape non-tag parts, rejoin
+        $parts = preg_split('/(<[^>]+>)/', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $result = '';
+        foreach ($parts as $part) {
+            if (str_starts_with($part, '<') && str_ends_with($part, '>')) {
+                $result .= $part; // Keep HTML tags as-is
+            } else {
+                $result .= htmlspecialchars($part);
+            }
+        }
+        $text = $result;
+
+        // Bold: **text**
+        $text = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $text);
+
+        return $text;
     }
 
     private function catalogProducts(Store $store, int $limit): array
