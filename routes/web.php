@@ -19,6 +19,7 @@ Route::get('/health', [HealthController::class, 'index']);
 Route::get('/auth/install', [AuthController::class, 'install'])->name('auth.install');
 Route::get('/auth/callback', [AuthController::class, 'callback']);
 Route::get('/auth/demo', [AuthController::class, 'demo'])->name('auth.demo');
+Route::get('/auth/check', [AuthController::class, 'check'])->name('auth.check');
 
 // Public marketing website
 Route::get('/', [MarketingController::class, 'home'])->name('home');

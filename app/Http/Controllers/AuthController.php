@@ -7,6 +7,7 @@ use App\Services\BillingService;
 use App\Shopify\OAuthService;
 use App\Shopify\ShopifyService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -15,7 +16,7 @@ class AuthController extends Controller
     {
         $shop = strtolower(trim((string) $request->query('shop', '')));
         if (! preg_match('/^[a-z0-9\-]+\.myshopify\.com$/', $shop)) {
-            return response('Invalid shop domain', 400);
+            return response('Invalid shop domain. Use format: yourstore.myshopify.com', 400);
         }
 
         // No real Shopify credentials configured (local preview) → explain
@@ -29,7 +30,21 @@ class AuthController extends Controller
             );
         }
 
-        return redirect()->away(OAuthService::begin($shop));
+        try {
+            $oauthUrl = OAuthService::begin($shop);
+            return redirect()->away($oauthUrl);
+        } catch (\Throwable $e) {
+            Log::error('OAuth begin failed for ' . $shop . ': ' . $e->getMessage());
+            return response(
+                'Could not start the install process. Error: ' . $e->getMessage() . '<br><br>'
+                .'<b>Possible causes:</b><br>'
+                .'1. SHOPIFY_API_KEY or SHOPIFY_API_SECRET in .env are incorrect<br>'
+                .'2. The app URL in Shopify Partner Dashboard doesn\'t match your server URL<br>'
+                .'3. The server URL is not accessible from the internet<br><br>'
+                .'<a href="/install">← Back to install page</a>',
+                500
+            );
+        }
     }
 
     /** GET /auth/callback → validate, save token, register webhooks */
@@ -69,5 +84,42 @@ class AuthController extends Controller
             return response('Demo store not seeded. Run: php artisan demo:seed', 500);
         }
         return redirect()->route('app', ['demo' => 1]);
+    }
+
+    /** GET /auth/check → diagnostic: check Shopify config and scopes */
+    public function check()
+    {
+        $apiKey = config('shopify.api_key', '');
+        $secret = config('shopify.api_secret', '');
+        $scopes = config('shopify.scopes', []);
+        $host = config('shopify.host', '');
+        $appUrl = config('app.url', '');
+
+        $isPlaceholder = fn (string $v): bool => $v === '' || str_contains($v, 'your_');
+
+        $issues = [];
+        if ($isPlaceholder($apiKey)) $issues[] = 'SHOPIFY_API_KEY is not set or is a placeholder';
+        if ($isPlaceholder($secret)) $issues[] = 'SHOPIFY_API_SECRET is not set or is a placeholder';
+        if (empty($host) || $host === '127.0.0.1:8123') $issues[] = 'SHOPIFY_APP_HOST_NAME is not set (should be your server domain)';
+
+        $requiredScopes = ['read_content', 'write_content'];
+        $missingScopes = array_diff($requiredScopes, $scopes);
+        if (!empty($missingScopes)) {
+            $issues[] = 'Missing scopes: ' . implode(', ', $missingScopes) . '. Update SHOPIFY_APP_SCOPES in .env';
+        }
+
+        $store = Store::where('shop', '!=', '')->first();
+        $storeScopes = $store ? $store->scopes : 'no store found';
+
+        return response()->json([
+            'api_key_set' => !$isPlaceholder($apiKey),
+            'api_secret_set' => !$isPlaceholder($secret),
+            'host' => $host,
+            'app_url' => $appUrl,
+            'configured_scopes' => $scopes,
+            'store_scopes' => $storeScopes,
+            'issues' => $issues,
+            'ok' => empty($issues),
+        ]);
     }
 }
