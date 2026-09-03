@@ -24,6 +24,17 @@ class MarketingController extends Controller
             ]);
         }
 
+        // If only ?shop= is present (no host), check if the store exists.
+        // This handles the case where a custom app install redirects here
+        // without the host param.
+        $shop = strtolower(trim((string) $request->query('shop', '')));
+        if ($shop && preg_match('/\.myshopify\.com$/', $shop)) {
+            $store = Store::where('shop', $shop)->first();
+            if ($store) {
+                return redirect()->route('app', ['shop' => $shop]);
+            }
+        }
+
         return view('marketing.home');
     }
 

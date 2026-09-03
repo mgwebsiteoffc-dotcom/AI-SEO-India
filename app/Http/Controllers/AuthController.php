@@ -57,23 +57,27 @@ class AuthController extends Controller
         try {
             $store = OAuthService::complete($query);
         } catch (\Throwable $e) {
+            Log::error('OAuth callback failed: ' . $e->getMessage());
             return response('OAuth failed: '.$e->getMessage(), 500);
         }
 
-        // Redirect into the embedded app. Shopify will load the app URL
-        // (configured in Partner Dashboard) inside the admin iframe with
-        // ?shop= and ?host= params — our MarketingController detects those
-        // and forwards to /app so the onboarding flow shows immediately.
+        // Redirect into the embedded app.
+        // For embedded apps loaded in Shopify admin iframe, redirect to the admin app page.
+        // For custom apps or direct access, redirect to our app URL with shop param.
         $apiKey = config('shopify.api_key');
-        if ($apiKey) {
+        $host = $request->query('host', '');
+
+        if ($host && $apiKey) {
+            // Embedded flow: redirect to Shopify admin which loads our app in iframe
             return redirect()->away(
                 "https://{$store->shop}/admin/apps/{$apiKey}"
             );
         }
 
-        return redirect()->away(
-            "https://{$store->shop}/admin/apps/"
-        );
+        // Custom app or direct flow: redirect to our app URL with shop param
+        // This ensures the user lands directly in the app with onboarding
+        $appUrl = rtrim(config('app.url'), '/');
+        return redirect()->away("{$appUrl}/app?shop={$store->shop}");
     }
 
     /** GET /auth/demo → demo store for local preview */

@@ -21,7 +21,8 @@ class AppController extends Controller
             $store = ShopifyService::sessionStore();
 
             // Fallback: find store by ?shop= query param. This covers the
-            // first load right after OAuth where the JWT may not be ready yet.
+            // first load right after OAuth where the JWT may not be ready yet,
+            // and custom app installs where host param may be missing.
             if (! $store) {
                 $shop = strtolower(trim((string) $request->query('shop', '')));
                 if ($shop && preg_match('/\.myshopify\.com$/', $shop)) {
