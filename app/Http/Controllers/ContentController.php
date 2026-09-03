@@ -102,9 +102,11 @@ class ContentController extends Controller
 
         if ($text === null) {
             $provider = $llm->provider();
+            $errorDetail = $llm->lastError ?: 'Unknown error';
+            Log::error('Sentiment LLM failed', ['provider' => $provider, 'error' => $errorDetail]);
             return response()->json([
                 'available' => false,
-                'message' => "LLM call failed (using {$provider}). Check that your API key is valid in super admin → AI Settings, then try again.",
+                'message' => "LLM call failed ({$provider}): {$errorDetail}",
             ]);
         }
 

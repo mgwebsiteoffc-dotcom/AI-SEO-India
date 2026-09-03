@@ -20,6 +20,8 @@ Route::get('/auth/install', [AuthController::class, 'install'])->name('auth.inst
 Route::get('/auth/callback', [AuthController::class, 'callback']);
 Route::get('/auth/demo', [AuthController::class, 'demo'])->name('auth.demo');
 Route::get('/auth/check', [AuthController::class, 'check'])->name('auth.check');
+Route::get('/auth/test-llm', [AuthController::class, 'testLlm'])->name('auth.test-llm');
+Route::get('/auth/test-shopify', [AuthController::class, 'testShopify'])->name('auth.test-shopify');
 
 // Public marketing website
 Route::get('/', [MarketingController::class, 'home'])->name('home');

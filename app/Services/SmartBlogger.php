@@ -221,8 +221,16 @@ class SmartBlogger
 
             $article = $data['article'] ?? null;
             if (! $article || empty($article['id'])) {
-                Log::warning('Shopify articleCreate returned no article', ['response' => json_encode($data), 'shop' => $store->shop]);
-                return ['ok' => false, 'error' => 'Shopify did not return an article. This usually means the app needs to be reinstalled to grant write_content permission. Go to Shopify admin → Apps → uninstall this app, then reinstall it.'];
+                // Get the full response for debugging
+                $fullResponse = $res->getDecodedBody();
+                Log::error('Shopify articleCreate returned no article', [
+                    'response' => json_encode($fullResponse),
+                    'shop' => $store->shop,
+                    'blog_id' => $blogId,
+                    'store_scopes' => $store->scopes,
+                ]);
+                $errorDetail = !empty($data['userErrors']) ? collect($data['userErrors'])->pluck('message')->implode('; ') : 'No article returned';
+                return ['ok' => false, 'error' => "Shopify publish failed: {$errorDetail}. Store scopes: {$store->scopes}. Try reinstalling the app from Shopify admin."];
             }
 
             // Build the article URL if Shopify didn't return one
