@@ -43,6 +43,8 @@ Route::prefix('admin')->middleware('admin.guard')->group(function () {
     Route::get('/stores', [\App\Http\Controllers\AdminController::class, 'stores'])->name('admin.stores');
     Route::get('/leads', [\App\Http\Controllers\AdminController::class, 'leads'])->name('admin.leads');
     Route::get('/activity', [\App\Http\Controllers\AdminController::class, 'activity'])->name('admin.activity');
+    Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('admin.settings');
+    Route::post('/settings', [\App\Http\Controllers\AdminController::class, 'saveSettings'])->name('admin.settings.save');
     Route::post('/stores/{store}/plan', [\App\Http\Controllers\AdminController::class, 'updatePlan'])->name('admin.store.plan');
     Route::post('/stores/{store}/delete', [\App\Http\Controllers\AdminController::class, 'deleteStore'])->name('admin.store.delete');
     Route::post('/leads/{lead}/delete', [\App\Http\Controllers\AdminController::class, 'deleteLead'])->name('admin.lead.delete');

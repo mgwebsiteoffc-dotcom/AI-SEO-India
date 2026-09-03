@@ -132,4 +132,58 @@ class AdminController extends Controller
 
         return back()->with('status', 'Lead deleted.');
     }
+
+    // -------------------------------------------------------- AI / LLM settings
+
+    public function settings()
+    {
+        return view('admin.settings', [
+            'openrouterKey' => config('services.openrouter.key') ?: '',
+            'openrouterModel' => config('services.openrouter.model', 'nvidia/nemotron-3.5-lightning:free'),
+            'openaiKey' => config('services.openai.key') ?: '',
+            'openaiModel' => config('services.openai.model', 'gpt-4o-mini'),
+            'geminiKey' => config('services.gemini.key') ?: '',
+            'geminiModel' => config('services.gemini.model', 'gemini-1.5-flash'),
+            'activeProvider' => app(\App\Services\LlmClient::class)->provider(),
+            'llmAvailable' => app(\App\Services\LlmClient::class)->available(),
+        ]);
+    }
+
+    public function saveSettings(Request $request)
+    {
+        $envPath = base_path('.env');
+        if (! file_exists($envPath) || ! is_writable($envPath)) {
+            return back()->with('error', '.env file is not writable. Update it manually.');
+        }
+
+        $env = file_get_contents($envPath);
+
+        $fields = [
+            'OPENROUTER_API_KEY' => trim((string) $request->input('openrouter_key', '')),
+            'OPENROUTER_MODEL' => trim((string) $request->input('openrouter_model', 'nvidia/nemotron-3.5-lightning:free')),
+            'OPENAI_API_KEY' => trim((string) $request->input('openai_key', '')),
+            'OPENAI_MODEL' => trim((string) $request->input('openai_model', 'gpt-4o-mini')),
+            'GEMINI_API_KEY' => trim((string) $request->input('gemini_key', '')),
+            'GEMINI_MODEL' => trim((string) $request->input('gemini_model', 'gemini-1.5-flash')),
+        ];
+
+        foreach ($fields as $key => $value) {
+            $pattern = '/^'.preg_quote($key, '/').'=.*/m';
+            $line = "$key=$value";
+            if (preg_match($pattern, $env)) {
+                $env = preg_replace($pattern, $line, $env);
+            } else {
+                $env = rtrim($env)."\n".$line."\n";
+            }
+        }
+
+        file_put_contents($envPath, $env);
+
+        // Clear config cache so changes take effect
+        if (function_exists('opcache_invalidate')) {
+            @opcache_invalidate($envPath, true);
+        }
+
+        return back()->with('status', 'AI/LLM settings saved. Changes take effect on next request.');
+    }
 }

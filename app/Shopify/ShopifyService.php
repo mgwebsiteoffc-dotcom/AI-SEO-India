@@ -88,13 +88,15 @@ class ShopifyService
             return Store::where('is_demo', true)->first();
         }
 
+        // If Shopify SDK is not configured, we can't validate JWTs.
+        // Return null so callers fall back to the shop query param.
         if (! self::init()) {
             return null;
         }
 
-        $headers = function_exists('getallheaders') ? getallheaders() : self::headersFromServer();
-        $cookies = $_COOKIE ?? [];
         try {
+            $headers = function_exists('getallheaders') ? getallheaders() : self::headersFromServer();
+            $cookies = $_COOKIE ?? [];
             $sessionId = OAuth::getCurrentSessionId($headers ?: [], $cookies, true);
             if (! $sessionId) {
                 return null;

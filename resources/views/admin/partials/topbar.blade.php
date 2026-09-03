@@ -4,6 +4,7 @@
         'stores' => ['route' => route('admin.stores'), 'label' => 'Stores'],
         'leads' => ['route' => route('admin.leads'), 'label' => 'Leads'],
         'activity' => ['route' => route('admin.activity'), 'label' => 'Activity'],
+        'settings' => ['route' => route('admin.settings'), 'label' => 'AI Settings'],
     ];
 @endphp
 <div class="border-b border-white/10 bg-surface-950/90 backdrop-blur-xl sticky top-0 z-40">
