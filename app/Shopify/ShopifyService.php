@@ -32,13 +32,20 @@ class ShopifyService
             return false;
         }
 
+        // Validate API version — Shopify versions follow YYYY-MM format
+        $apiVersion = config('shopify.api_version', '2025-04');
+        if (!preg_match('/^\d{4}-\d{2}$/', $apiVersion) || $apiVersion > '2025-10') {
+            Log::warning("Invalid Shopify API version '{$apiVersion}' — falling back to 2025-04. Update SHOPIFY_API_VERSION in .env.");
+            $apiVersion = '2025-04';
+        }
+
         Context::initialize(
             apiKey: $apiKey,
             apiSecretKey: $secret,
             scopes: $scopes,
             hostName: $host,
             sessionStorage: new FileSessionStorage(storage_path('framework/sessions/shopify')),
-            apiVersion: config('shopify.api_version', '2025-04'),
+            apiVersion: $apiVersion,
             isEmbeddedApp: true,
             isPrivateApp: false,
         );

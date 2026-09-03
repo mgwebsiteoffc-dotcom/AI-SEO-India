@@ -94,6 +94,7 @@ class AuthController extends Controller
         $scopes = config('shopify.scopes', []);
         $host = config('shopify.host', '');
         $appUrl = config('app.url', '');
+        $apiVersion = config('shopify.api_version', '2025-04');
 
         $isPlaceholder = fn (string $v): bool => $v === '' || str_contains($v, 'your_');
 
@@ -101,6 +102,11 @@ class AuthController extends Controller
         if ($isPlaceholder($apiKey)) $issues[] = 'SHOPIFY_API_KEY is not set or is a placeholder';
         if ($isPlaceholder($secret)) $issues[] = 'SHOPIFY_API_SECRET is not set or is a placeholder';
         if (empty($host) || $host === '127.0.0.1:8123') $issues[] = 'SHOPIFY_APP_HOST_NAME is not set (should be your server domain)';
+
+        // Check API version
+        if (!preg_match('/^\d{4}-\d{2}$/', $apiVersion) || $apiVersion > '2025-10') {
+            $issues[] = "SHOPIFY_API_VERSION '{$apiVersion}' is invalid. Use '2025-04' (latest stable).";
+        }
 
         $requiredScopes = ['read_content', 'write_content'];
         $missingScopes = array_diff($requiredScopes, $scopes);
@@ -116,10 +122,13 @@ class AuthController extends Controller
             'api_secret_set' => !$isPlaceholder($secret),
             'host' => $host,
             'app_url' => $appUrl,
+            'api_version' => $apiVersion,
             'configured_scopes' => $scopes,
             'store_scopes' => $storeScopes,
             'issues' => $issues,
             'ok' => empty($issues),
+            'install_url' => $appUrl . '/auth/install?shop=YOUR-STORE.myshopify.com',
+            'callback_url' => $appUrl . '/auth/callback',
         ]);
     }
 }
