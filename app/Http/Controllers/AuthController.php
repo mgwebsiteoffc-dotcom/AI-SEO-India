@@ -45,8 +45,10 @@ class AuthController extends Controller
             return response('OAuth failed: '.$e->getMessage(), 500);
         }
 
-        // Redirect directly into the embedded app so the merchant lands on
-        // the onboarding flow instead of the generic apps list.
+        // Redirect into the embedded app. Shopify will load the app URL
+        // (configured in Partner Dashboard) inside the admin iframe with
+        // ?shop= and ?host= params — our MarketingController detects those
+        // and forwards to /app so the onboarding flow shows immediately.
         $apiKey = config('shopify.api_key');
         if ($apiKey) {
             return redirect()->away(

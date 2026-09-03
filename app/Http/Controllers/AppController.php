@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class AppController extends Controller
 {
-    /** GET / → embedded admin app shell (SPA). */
+    /** GET /app → embedded admin app shell (SPA). */
     public function index(Request $request)
     {
         $demo = $request->query('demo') === '1';
@@ -17,7 +17,17 @@ class AppController extends Controller
         if ($demo) {
             $store = Store::where('is_demo', true)->first();
         } else {
+            // Try JWT session first (normal embedded-app flow)
             $store = ShopifyService::sessionStore();
+
+            // Fallback: find store by ?shop= query param. This covers the
+            // first load right after OAuth where the JWT may not be ready yet.
+            if (! $store) {
+                $shop = strtolower(trim((string) $request->query('shop', '')));
+                if ($shop && preg_match('/\.myshopify\.com$/', $shop)) {
+                    $store = Store::where('shop', $shop)->first();
+                }
+            }
         }
 
         if (! $store) {

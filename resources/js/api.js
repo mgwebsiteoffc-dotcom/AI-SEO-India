@@ -24,12 +24,22 @@ function sessionToken() {
 async function request(method, url, body = null) {
     const token = await sessionToken();
     const opts = { method, headers: { Accept: 'application/json' } };
-    // Demo mode: the JWT middleware resolves the demo store from the ?demo=1 flag.
-    if (window.demoMode && !url.includes('?')) {
-        url += '?demo=1';
-    } else if (window.demoMode) {
-        url += '&demo=1';
+
+    // Build query params: always include shop as fallback for session resolution
+    const params = new URLSearchParams();
+    if (window.demoMode) {
+        params.set('demo', '1');
     }
+    // Pass shop domain so the backend can resolve the store even without JWT
+    const shopDomain = document.getElementById('app')?.dataset?.shop;
+    if (shopDomain && !window.demoMode) {
+        params.set('shop', shopDomain);
+    }
+    const qs = params.toString();
+    if (qs) {
+        url += (url.includes('?') ? '&' : '?') + qs;
+    }
+
     if (token !== 'none') {
         opts.headers.Authorization = `Bearer ${token}`;
     }
