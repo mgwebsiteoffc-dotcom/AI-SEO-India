@@ -184,11 +184,13 @@ class SmartBlogger
                 return ['ok' => false, 'error' => 'Article body is too short or empty after conversion. Try regenerating the article.'];
             }
 
+            // Shopify GraphQL articleCreate mutation (2025-04+ syntax)
+            // blogId goes INSIDE the article input, not as a separate argument
             $mutation = <<<'GRAPHQL'
-            mutation ArticleCreate($blogId: ID!, $article: ArticleInput!) {
-              articleCreate(blogId: $blogId, article: $article) {
-                article { id url handle }
-                userErrors { field message }
+            mutation CreateArticle($article: ArticleCreateInput!) {
+              articleCreate(article: $article) {
+                article { id title handle }
+                userErrors { code field message }
               }
             }
             GRAPHQL;
@@ -196,10 +198,10 @@ class SmartBlogger
             $res = $client->query([
                 'query' => $mutation,
                 'variables' => [
-                    'blogId' => $blogId,
                     'article' => [
+                        'blogId' => $blogId,
                         'title' => $post->title,
-                        'bodyHtml' => $bodyHtml,
+                        'body' => $bodyHtml,
                         'tags' => ['ai-visibility', strtolower(str_replace(' ', '-', $post->category)), 'seo'],
                         'isPublished' => true,
                     ],
@@ -233,11 +235,10 @@ class SmartBlogger
                 return ['ok' => false, 'error' => "Shopify publish failed: {$errorDetail}. Store scopes: {$store->scopes}. Try reinstalling the app from Shopify admin."];
             }
 
-            // Build the article URL if Shopify didn't return one
-            $articleUrl = $article['url'] ?? null;
-            if (! $articleUrl && ! empty($article['handle'])) {
-                $articleUrl = 'https://' . $store->shop . '/blogs/' . $this->blogHandle($client, $blogId) . '/' . $article['handle'];
-            }
+            // Build the article URL from blog handle + article handle
+            $articleHandle = $article['handle'] ?? null;
+            $blogHandle = $this->blogHandle($client, $blogId);
+            $articleUrl = 'https://' . $store->shop . '/blogs/' . $blogHandle . '/' . $articleHandle;
 
             $post->update([
                 'status' => 'published',

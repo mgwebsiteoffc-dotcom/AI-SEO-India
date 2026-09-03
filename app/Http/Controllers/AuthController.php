@@ -225,12 +225,12 @@ class AuthController extends Controller
             }
             $result['using_blog'] = $blogTitle . ' (' . $blogId . ')';
 
-            // Step 2: Try to create a test article
+            // Step 2: Try to create a test article (2025-04+ syntax)
             $mutation = <<<'GRAPHQL'
-            mutation ArticleCreate($blogId: ID!, $article: ArticleInput!) {
-              articleCreate(blogId: $blogId, article: $article) {
-                article { id url handle }
-                userErrors { field message }
+            mutation CreateArticle($article: ArticleCreateInput!) {
+              articleCreate(article: $article) {
+                article { id title handle }
+                userErrors { code field message }
               }
             }
             GRAPHQL;
@@ -238,10 +238,10 @@ class AuthController extends Controller
             $res = $client->query([
                 'query' => $mutation,
                 'variables' => [
-                    'blogId' => $blogId,
                     'article' => [
+                        'blogId' => $blogId,
                         'title' => 'AI Visibility Test — ' . now()->format('d M H:i'),
-                        'bodyHtml' => '<p>Test article from AI Visibility app. Delete this.</p>',
+                        'body' => '<p>Test article from AI Visibility app. Delete this.</p>',
                         'tags' => ['ai-visibility', 'test'],
                         'isPublished' => true,
                     ],
@@ -257,7 +257,8 @@ class AuthController extends Controller
             } elseif (!empty($articleData['article']['id'])) {
                 $result['success'] = true;
                 $result['article_id'] = $articleData['article']['id'];
-                $result['article_url'] = $articleData['article']['url'] ?? 'not returned by Shopify';
+                $result['article_handle'] = $articleData['article']['handle'] ?? 'unknown';
+                $result['article_url'] = 'https://' . $store->shop . '/blogs/' . ($blogs[0]['node']['handle'] ?? 'news') . '/' . ($articleData['article']['handle'] ?? '');
             } else {
                 $result['success'] = false;
                 $result['error'] = 'No article and no errors — unexpected response';
