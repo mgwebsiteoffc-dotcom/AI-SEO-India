@@ -3,6 +3,7 @@
         'overview' => ['route' => route('admin.overview'), 'label' => 'Overview'],
         'stores' => ['route' => route('admin.stores'), 'label' => 'Stores'],
         'leads' => ['route' => route('admin.leads'), 'label' => 'Leads'],
+        'blogs' => ['route' => route('admin.blogs'), 'label' => 'Blogs'],
         'activity' => ['route' => route('admin.activity'), 'label' => 'Activity'],
         'settings' => ['route' => route('admin.settings'), 'label' => 'AI Settings'],
     ];
@@ -22,8 +23,14 @@
                    class="px-3 py-1.5 rounded-lg transition-colors {{ ($active ?? 'overview') === $key ? 'bg-brand-500/20 text-brand-300' : 'text-slate-400 hover:text-white' }}">{{ $t['label'] }}</a>
             @endforeach
         </nav>
-        <a href="{{ route('home') }}" target="_blank"
-           class="text-[11px] font-semibold text-slate-400 hover:text-white transition-colors border border-white/10 rounded-lg px-2.5 py-1.5 whitespace-nowrap">← View site</a>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('home') }}" target="_blank"
+               class="text-[11px] font-semibold text-slate-400 hover:text-white transition-colors border border-white/10 rounded-lg px-2.5 py-1.5 whitespace-nowrap">← View site</a>
+            <form method="POST" action="{{ route('admin.logout') }}" class="inline">
+                @csrf
+                <button type="submit" class="text-[11px] font-semibold text-slate-400 hover:text-red-300 transition-colors border border-white/10 rounded-lg px-2.5 py-1.5 whitespace-nowrap">Logout</button>
+            </form>
+        </div>
     </div>
 </div>
 

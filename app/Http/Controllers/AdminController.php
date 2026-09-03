@@ -11,6 +11,7 @@ use App\Models\TrackedQuery;
 use App\Models\WebhookCall;
 use App\Services\BillingService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 /**
  * SaaS-owner ("super admin") panel — a read/act overview of every tenant:
@@ -19,6 +20,44 @@ use Illuminate\Http\Request;
 class AdminController extends Controller
 {
     private const PLAN_ORDER = ['free' => 0, 'grow' => 1, 'scale' => 2, 'agency' => 3];
+
+    // ----------------------------------------------------------------- Auth
+
+    public function loginForm()
+    {
+        return view('admin.login');
+    }
+
+    public function login(Request $request)
+    {
+        $email = (string) config('admin.email', env('ADMIN_EMAIL', ''));
+        $password = (string) config('admin.password', env('ADMIN_PASSWORD', ''));
+
+        $inputEmail = trim((string) $request->input('email', ''));
+        $inputPassword = (string) $request->input('password', '');
+
+        // No credentials configured + not production → open access for preview
+        if ($email === '' && $password === '' && ! app()->environment('production')) {
+            session(['admin_logged_in' => true]);
+            return redirect()->route('admin.overview');
+        }
+
+        if ($email !== '' && hash_equals($email, $inputEmail) && hash_equals($password, $inputPassword)) {
+            session(['admin_logged_in' => true]);
+            $request->session()->regenerate();
+            return redirect()->route('admin.overview');
+        }
+
+        return back()->withErrors(['email' => 'Invalid credentials.'])->withInput($request->only('email'));
+    }
+
+    public function logout(Request $request)
+    {
+        session()->forget('admin_logged_in');
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect()->route('admin.login');
+    }
 
     public function overview()
     {
@@ -185,5 +224,89 @@ class AdminController extends Controller
         }
 
         return back()->with('status', 'AI/LLM settings saved. Changes take effect on next request.');
+    }
+
+    // -------------------------------------------------------- Blog management
+
+    public function blogs()
+    {
+        $posts = Post::orderByDesc('published_at')->orderByDesc('id')->paginate(20);
+        return view('admin.blogs', ['posts' => $posts]);
+    }
+
+    public function blogCreate()
+    {
+        return view('admin.blog-form', ['post' => null]);
+    }
+
+    public function blogStore(Request $request)
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255|unique:posts,slug',
+            'meta_description' => 'nullable|string|max:300',
+            'excerpt' => 'nullable|string|max:500',
+            'body' => 'required|string',
+            'author' => 'nullable|string|max:120',
+            'faq_json' => 'nullable|string',
+            'seo_notes' => 'nullable|string',
+            'publish' => 'nullable|boolean',
+        ]);
+
+        $slug = $data['slug'] ?: Str::slug($data['title']);
+
+        $post = Post::create([
+            'title' => $data['title'],
+            'slug' => $slug,
+            'meta_description' => $data['meta_description'] ?? null,
+            'excerpt' => $data['excerpt'] ?? null,
+            'body' => $data['body'],
+            'author' => $data['author'] ?? 'AI Visibility Team',
+            'published_at' => ($data['publish'] ?? false) ? now() : null,
+        ]);
+
+        return redirect()->route('admin.blogs')->with('status', "Post \"{$post->title}\" created.");
+    }
+
+    public function blogEdit(Post $post)
+    {
+        return view('admin.blog-form', ['post' => $post]);
+    }
+
+    public function blogUpdate(Request $request, Post $post)
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255|unique:posts,slug,' . $post->id,
+            'meta_description' => 'nullable|string|max:300',
+            'excerpt' => 'nullable|string|max:500',
+            'body' => 'required|string',
+            'author' => 'nullable|string|max:120',
+            'faq_json' => 'nullable|string',
+            'seo_notes' => 'nullable|string',
+            'publish' => 'nullable|boolean',
+        ]);
+
+        $wasPublished = $post->published_at !== null;
+        $shouldBePublished = ($data['publish'] ?? false);
+
+        $post->update([
+            'title' => $data['title'],
+            'slug' => $data['slug'] ?: Str::slug($data['title']),
+            'meta_description' => $data['meta_description'] ?? null,
+            'excerpt' => $data['excerpt'] ?? null,
+            'body' => $data['body'],
+            'author' => $data['author'] ?? $post->author,
+            'published_at' => $shouldBePublished ? ($post->published_at ?? now()) : null,
+        ]);
+
+        return redirect()->route('admin.blogs')->with('status', "Post \"{$post->title}\" updated.");
+    }
+
+    public function blogDelete(Post $post)
+    {
+        $title = $post->title;
+        $post->delete();
+        return redirect()->route('admin.blogs')->with('status', "Post \"{$title}\" deleted.");
     }
 }
