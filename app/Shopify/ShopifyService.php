@@ -34,7 +34,7 @@ class ShopifyService
 
         // Validate API version — Shopify versions follow YYYY-MM format
         $apiVersion = config('shopify.api_version', '2025-04');
-        if (!preg_match('/^\d{4}-\d{2}$/', $apiVersion) || $apiVersion > '2025-10') {
+        if (!preg_match('/^\d{4}-\d{2}$/', $apiVersion)) {
             Log::warning("Invalid Shopify API version '{$apiVersion}' — falling back to 2025-04. Update SHOPIFY_API_VERSION in .env.");
             $apiVersion = '2025-04';
         }

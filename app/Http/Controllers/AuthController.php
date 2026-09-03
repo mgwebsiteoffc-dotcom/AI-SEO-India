@@ -108,8 +108,8 @@ class AuthController extends Controller
         if (empty($host) || $host === '127.0.0.1:8123') $issues[] = 'SHOPIFY_APP_HOST_NAME is not set (should be your server domain)';
 
         // Check API version
-        if (!preg_match('/^\d{4}-\d{2}$/', $apiVersion) || $apiVersion > '2025-10') {
-            $issues[] = "SHOPIFY_API_VERSION '{$apiVersion}' is invalid. Use '2025-04' (latest stable).";
+        if (!preg_match('/^\d{4}-\d{2}$/', $apiVersion)) {
+            $issues[] = "SHOPIFY_API_VERSION '{$apiVersion}' is invalid. Use format YYYY-MM (e.g. 2026-07).";
         }
 
         $requiredScopes = ['read_content', 'write_content'];
