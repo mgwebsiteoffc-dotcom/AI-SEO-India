@@ -22,12 +22,14 @@ class LlmsGenerator
 
         if ($entries->isEmpty()) {
             // Build from the Shopify catalog via GraphQL
-            $entries = $this->buildFromCatalog($store);
+            $built = $this->buildFromCatalog($store);
+            $entries = collect($built);
             if ($persist) {
                 $store->llmsEntries()->delete();
-                foreach ($entries as $i => $e) {
+                foreach ($built as $i => $e) {
                     $store->llmsEntries()->create(array_merge($e, ['position' => $i]));
                 }
+                $entries = $store->llmsEntries()->orderBy('position')->get();
             }
         }
 
@@ -43,8 +45,8 @@ class LlmsGenerator
         $lines[] = '';
         $lines[] = '- Name: '.$brand;
         $lines[] = '- Domain: https://'.$domain;
-        $lines[] = '- Products: '.$entries->filter(fn ($e) => ($e['kind'] ?? $e->kind) === 'product')->count().' listed below';
-        $lines[] = '- Categories: '.$entries->filter(fn ($e) => ($e['kind'] ?? $e->kind) === 'collection')->count().' collections';
+        $lines[] = '- Products: '.$entries->filter(fn ($e) => (is_array($e) ? $e['kind'] : $e->kind) === 'product')->count().' listed below';
+        $lines[] = '- Categories: '.$entries->filter(fn ($e) => (is_array($e) ? $e['kind'] : $e->kind) === 'collection')->count().' collections';
         $lines[] = '';
         $lines[] = '## Product Pages';
         $lines[] = '';
@@ -106,7 +108,13 @@ class LlmsGenerator
             }
             GRAPHQL;
             $res = $client->query(['query' => $query]);
-            $data = $res->getDecodedBody()['data'] ?? [];
+            $body = $res->getDecodedBody();
+
+            if (! empty($body['errors'])) {
+                Log::warning('LlmsGenerator catalog fetch errors', ['errors' => $body['errors'], 'shop' => $store->shop]);
+            }
+
+            $data = $body['data'] ?? [];
 
             foreach (($data['products']['edges'] ?? []) as $e) {
                 $entries[] = [
@@ -144,17 +152,13 @@ class LlmsGenerator
             Log::warning('Catalog fetch failed for '.$store->shop.': '.$e->getMessage());
         }
 
-        // Fallback seed when the API is unavailable (demo)
+        // When the API is unavailable, show a minimal entry with just the brand info
+        // instead of misleading dummy products that don't match the store's catalog
         if (empty($entries)) {
             $brand = $store->brand_name ?: ucfirst(strtok($store->shop, '.'));
             $entries = [
-                ['kind' => 'product', 'title' => $brand.' Signature Serum 30ml', 'path' => '/products/signature-serum', 'description' => 'Vitamin C + niacinamide serum for Indian skin, ₹799.'],
-                ['kind' => 'product', 'title' => $brand.' Hydrating Moisturiser', 'path' => '/products/hydrating-moisturiser', 'description' => 'Lightweight gel moisturiser for humid Indian summers, ₹649.'],
-                ['kind' => 'product', 'title' => $brand.' Sunscreen SPF 50', 'path' => '/products/sunscreen-spf50', 'description' => 'Non-greasy broad spectrum SPF 50, ₹599.'],
-                ['kind' => 'collection', 'title' => 'Shop All', 'path' => '/collections/all'],
-                ['kind' => 'collection', 'title' => 'Best Sellers', 'path' => '/collections/best-sellers'],
-                ['kind' => 'page', 'title' => 'About Us', 'path' => '/pages/about'],
-                ['kind' => 'page', 'title' => 'FAQ', 'path' => '/pages/faq'],
+                ['kind' => 'page', 'title' => $brand, 'path' => '/', 'description' => 'Store homepage.'],
+                ['kind' => 'page', 'title' => 'All Products', 'path' => '/collections/all', 'description' => 'Browse all products.'],
             ];
         }
 

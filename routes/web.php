@@ -19,6 +19,10 @@ Route::get('/health', [HealthController::class, 'index']);
 Route::get('/auth/install', [AuthController::class, 'install'])->name('auth.install');
 Route::get('/auth/callback', [AuthController::class, 'callback']);
 Route::get('/auth/demo', [AuthController::class, 'demo'])->name('auth.demo');
+Route::get('/auth/check', [AuthController::class, 'check'])->name('auth.check');
+Route::get('/auth/test-llm', [AuthController::class, 'testLlm'])->name('auth.test-llm');
+Route::get('/auth/test-shopify', [AuthController::class, 'testShopify'])->name('auth.test-shopify');
+Route::get('/auth/test-publish', [AuthController::class, 'testPublish'])->name('auth.test-publish');
 
 // Public marketing website
 Route::get('/', [MarketingController::class, 'home'])->name('home');
@@ -39,13 +43,29 @@ Route::get('/terms', [MarketingController::class, 'terms'])->name('terms');
 // SaaS-owner (super admin) panel — demo/local preview open, production gated
 // behind ADMIN_EMAIL / ADMIN_PASSWORD HTTP basic auth.
 Route::prefix('admin')->middleware('admin.guard')->group(function () {
+    // Auth
+    Route::get('/login', [\App\Http\Controllers\AdminController::class, 'loginForm'])->name('admin.login');
+    Route::post('/login', [\App\Http\Controllers\AdminController::class, 'login'])->name('admin.login.submit');
+    Route::post('/logout', [\App\Http\Controllers\AdminController::class, 'logout'])->name('admin.logout');
+
+    // Dashboard
     Route::get('/', [\App\Http\Controllers\AdminController::class, 'overview'])->name('admin.overview');
     Route::get('/stores', [\App\Http\Controllers\AdminController::class, 'stores'])->name('admin.stores');
     Route::get('/leads', [\App\Http\Controllers\AdminController::class, 'leads'])->name('admin.leads');
     Route::get('/activity', [\App\Http\Controllers\AdminController::class, 'activity'])->name('admin.activity');
+    Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('admin.settings');
+    Route::post('/settings', [\App\Http\Controllers\AdminController::class, 'saveSettings'])->name('admin.settings.save');
     Route::post('/stores/{store}/plan', [\App\Http\Controllers\AdminController::class, 'updatePlan'])->name('admin.store.plan');
     Route::post('/stores/{store}/delete', [\App\Http\Controllers\AdminController::class, 'deleteStore'])->name('admin.store.delete');
     Route::post('/leads/{lead}/delete', [\App\Http\Controllers\AdminController::class, 'deleteLead'])->name('admin.lead.delete');
+
+    // Blog management
+    Route::get('/blogs', [\App\Http\Controllers\AdminController::class, 'blogs'])->name('admin.blogs');
+    Route::get('/blogs/create', [\App\Http\Controllers\AdminController::class, 'blogCreate'])->name('admin.blogs.create');
+    Route::post('/blogs', [\App\Http\Controllers\AdminController::class, 'blogStore'])->name('admin.blogs.store');
+    Route::get('/blogs/{post}/edit', [\App\Http\Controllers\AdminController::class, 'blogEdit'])->name('admin.blogs.edit');
+    Route::put('/blogs/{post}', [\App\Http\Controllers\AdminController::class, 'blogUpdate'])->name('admin.blogs.update');
+    Route::delete('/blogs/{post}', [\App\Http\Controllers\AdminController::class, 'blogDelete'])->name('admin.blogs.delete');
 });
 
 // Embedded app shell (session OR demo)
@@ -70,6 +90,7 @@ Route::prefix('api')->middleware(VerifyShopifySession::class)->group(function ()
     Route::get('/dashboard', [ApiController::class, 'dashboard']);
     Route::get('/audit/latest', [ApiController::class, 'latestAudit']);
     Route::post('/audit/run', [ApiController::class, 'runAudit']);
+    Route::post('/audit/issue/{id}/toggle', [ApiController::class, 'toggleIssue']);
     Route::get('/tracker', [ApiController::class, 'tracker']);
     Route::post('/tracker/query', [ApiController::class, 'addQuery']);
     Route::delete('/tracker/query/{id}', [ApiController::class, 'deleteQuery']);
@@ -95,4 +116,5 @@ Route::prefix('api')->middleware(VerifyShopifySession::class)->group(function ()
     Route::get('/content/sentiment', [ContentController::class, 'sentiment']);
     Route::get('/settings', [ApiController::class, 'settings']);
     Route::post('/settings', [ApiController::class, 'saveSettings']);
+    Route::post('/onboarding/complete', [ApiController::class, 'completeOnboarding']);
 });

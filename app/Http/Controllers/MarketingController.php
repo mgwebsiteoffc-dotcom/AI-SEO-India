@@ -12,8 +12,29 @@ use Illuminate\Http\Request;
 
 class MarketingController extends Controller
 {
-    public function home()
+    public function home(Request $request)
     {
+        // When Shopify loads the embedded app, it hits the configured app URL
+        // with ?shop=...&host=... query params. Detect this and redirect into
+        // the embedded app shell instead of showing the marketing homepage.
+        if ($request->query('shop') && $request->query('host')) {
+            return redirect()->route('app', [
+                'shop' => $request->query('shop'),
+                'host' => $request->query('host'),
+            ]);
+        }
+
+        // If only ?shop= is present (no host), check if the store exists.
+        // This handles the case where a custom app install redirects here
+        // without the host param.
+        $shop = strtolower(trim((string) $request->query('shop', '')));
+        if ($shop && preg_match('/\.myshopify\.com$/', $shop)) {
+            $store = Store::where('shop', $shop)->first();
+            if ($store) {
+                return redirect()->route('app', ['shop' => $shop]);
+            }
+        }
+
         return view('marketing.home');
     }
 

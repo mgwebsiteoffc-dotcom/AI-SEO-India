@@ -9,7 +9,7 @@
         </button>
       </div>
       <div v-if="sentiment.available === false" class="mt-3 text-xs text-amber-700 bg-amber-50 rounded-xl p-3 leading-relaxed">
-        {{ sentiment.message || 'AI Sentiment needs an API key.' }}
+        {{ sentiment.message || 'AI Sentiment needs an LLM API key. Add one in super admin → AI Settings.' }}
       </div>
       <div v-else-if="sentiment.available" class="mt-4 grid md:grid-cols-3 gap-4">
         <div class="rounded-xl border border-slate-200 p-4">
@@ -51,18 +51,21 @@
           <option value="youthful">Gen-Z Indian</option>
         </select>
         <button type="submit" class="btn-primary sm:col-span-2" :disabled="busy">
-          {{ busy ? 'Writing article…' : (llmMode ? 'Generate with AI ✨' : 'Generate (template mode — add OpenAI key for AI-written copy)') }}
+          {{ busy ? 'Writing article…' : (llmMode ? 'Generate with AI ✨' : 'Generate (template mode — add API key for AI-written copy)') }}
         </button>
       </form>
       <p v-if="!llmMode" class="text-[11px] text-slate-500 mt-2">
-        No OPENAI_API_KEY / GEMINI_API_KEY configured — using the honest template engine. Add a key in .env for fully AI-written Hinglish copy.
+        No LLM API key configured — using the honest template engine. The app owner needs to add an OpenRouter, OpenAI, or Gemini key in super admin → AI Settings for fully AI-written copy.
       </p>
     </div>
 
     <!-- Articles -->
     <div class="stat-card">
       <div class="text-sm font-bold text-slate-900 mb-3">Your articles ({{ posts.length }})</div>
-      <div v-if="!posts.length" class="text-sm text-slate-500 py-3">No articles yet — generate your first one above. Articles are built from your real catalog and can be published to your Shopify blog in one click.</div>
+      <div v-if="loadError" class="text-xs text-red-600 bg-red-50 rounded-xl p-3 mb-3">
+        Could not load articles: {{ loadError }}
+      </div>
+      <div v-if="!posts.length && !loadError" class="text-sm text-slate-500 py-3">No articles yet — generate your first one above. Articles are built from your real catalog and can be published to your Shopify blog in one click.</div>
       <div class="space-y-3">
         <div v-for="p in posts" :key="p.id" class="rounded-xl border border-slate-200 p-4">
           <div class="flex items-start justify-between gap-3">
@@ -110,12 +113,19 @@ const preview = ref(null);
 const llmMode = ref(false);
 const sentiment = ref({});
 const sentimentBusy = ref(false);
+const loadError = ref('');
 const statusBadge = { draft: 'badge-slate', generated: 'badge-amber', published: 'badge-green', failed: 'badge-red' };
 const sentimentColor = { positive: 'text-emerald-600', mixed: 'text-amber-600', neutral: 'text-slate-600', negative: 'text-red-600' };
 
 async function load() {
-    const d = await api.get('/api/content');
-    posts.value = d.posts || [];
+    try {
+        const d = await api.get('/api/content');
+        posts.value = d.posts || [];
+        loadError.value = '';
+    } catch (e) {
+        loadError.value = e.message;
+        posts.value = [];
+    }
 }
 
 async function generate() {
@@ -136,11 +146,17 @@ async function publish(p) {
     try {
         const d = await api.post(`/api/content/${p.id}/publish`);
         if (!d.ok) {
-            alert('Publish failed: ' + (d.error || 'unknown'));
+            alert('Publish failed: ' + (d.error || 'Unknown error — check Shopify app permissions (write_content scope).'));
+        } else {
+            // Show success with link
+            await load();
+            if (d.url) {
+                window.open(d.url, '_blank');
+            }
         }
         await load();
     } catch (e) {
-        alert(e.message);
+        alert('Publish error: ' + e.message);
     } finally {
         publishing.value = null;
     }
@@ -164,8 +180,8 @@ async function runSentiment() {
 }
 
 onMounted(async () => {
+    await load();
     try {
-        await load();
         const t = await api.get('/api/tracker');
         llmMode.value = t.llm_mode;
     } catch (e) { /* session */ }

@@ -32,13 +32,20 @@ class ShopifyService
             return false;
         }
 
+        // Validate API version — Shopify versions follow YYYY-MM format
+        $apiVersion = config('shopify.api_version', '2025-04');
+        if (!preg_match('/^\d{4}-\d{2}$/', $apiVersion)) {
+            Log::warning("Invalid Shopify API version '{$apiVersion}' — falling back to 2025-04. Update SHOPIFY_API_VERSION in .env.");
+            $apiVersion = '2025-04';
+        }
+
         Context::initialize(
             apiKey: $apiKey,
             apiSecretKey: $secret,
             scopes: $scopes,
             hostName: $host,
             sessionStorage: new FileSessionStorage(storage_path('framework/sessions/shopify')),
-            apiVersion: config('shopify.api_version', '2025-04'),
+            apiVersion: $apiVersion,
             isEmbeddedApp: true,
             isPrivateApp: false,
         );
@@ -88,16 +95,18 @@ class ShopifyService
             return Store::where('is_demo', true)->first();
         }
 
+        // If Shopify SDK is not configured, we can't validate JWTs.
+        // Return null so callers fall back to the shop query param.
         if (! self::init()) {
             return null;
         }
 
-        $headers = function_exists('getallheaders') ? getallheaders() : self::headersFromServer();
-        $cookies = $_COOKIE ?? [];
         try {
+            $headers = function_exists('getallheaders') ? getallheaders() : self::headersFromServer();
+            $cookies = $_COOKIE ?? [];
             $sessionId = OAuth::getCurrentSessionId($headers ?: [], $cookies, true);
             if (! $sessionId) {
-                return null;
+                return null; // No JWT yet — first load or non-embedded request. Normal.
             }
             // Extract shop from the JWT session id: "{userId}_{shop}"
             $shop = null;
@@ -107,7 +116,10 @@ class ShopifyService
             }
             return $shop ? Store::where('shop', $shop)->first() : null;
         } catch (\Throwable $e) {
-            Log::debug('Shopify session load failed: '.$e->getMessage());
+            // Only log unexpected errors, not the common "missing auth header" case
+            if (stripos($e->getMessage(), 'Missing Authorization') === false) {
+                Log::debug('Shopify session load failed: ' . $e->getMessage());
+            }
             return null;
         }
     }

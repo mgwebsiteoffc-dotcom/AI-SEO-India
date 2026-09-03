@@ -27,7 +27,8 @@
          data-shop="{{ $shop }}"
          data-brand="{{ $store->brand_name ?? '' }}"
          data-domain="{{ $store->hostname() }}"
-         data-plan="{{ $store->plan }}"></div>
+         data-plan="{{ $store->plan }}"
+         data-onboarding="{{ $onboardingCompleted ? '1' : '0' }}"></div>
     @if ($demo)
         <div style="position:fixed;bottom:0;left:0;right:0;z-index:50;background:#0f172a;color:#fbbf24;font:600 12px/1.4 system-ui;padding:6px 14px;text-align:center">
             DEMO MODE — this panel runs on seeded data.

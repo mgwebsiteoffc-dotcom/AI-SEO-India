@@ -87,7 +87,7 @@ class ContentController extends Controller
         if (! $llm->available()) {
             return response()->json([
                 'available' => false,
-                'message' => 'AI Sentiment needs an OPENAI_API_KEY or GEMINI_API_KEY in .env. Without a key we cannot honestly read AI answers — add one to enable.',
+                'message' => 'AI Sentiment needs an LLM API key. Add OPENROUTER_API_KEY (free models available), OPENAI_API_KEY, or GEMINI_API_KEY in super admin → AI Settings.',
             ]);
         }
 
@@ -101,7 +101,13 @@ class ContentController extends Controller
         );
 
         if ($text === null) {
-            return response()->json(['available' => false, 'message' => 'LLM call failed — try again shortly.']);
+            $provider = $llm->provider();
+            $errorDetail = $llm->lastError ?: 'Unknown error';
+            Log::error('Sentiment LLM failed', ['provider' => $provider, 'error' => $errorDetail]);
+            return response()->json([
+                'available' => false,
+                'message' => "LLM call failed ({$provider}): {$errorDetail}",
+            ]);
         }
 
         $data = json_decode(trim($text, "` \n"), true);

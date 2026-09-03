@@ -16,20 +16,40 @@ function sessionToken() {
                 setTimeout(() => { tokenPromise = null; }, TOKEN_TTL);
                 return t;
             })
-            .catch(() => { tokenPromise = null; return 'none'; });
+            .catch((err) => {
+                console.warn('[AI Visibility] Session token error:', err);
+                tokenPromise = null;
+                return 'none';
+            });
     }
     return tokenPromise;
+}
+
+/** Get the shop domain from the page — used as fallback auth when JWT is unavailable. */
+function getShopDomain() {
+    return document.getElementById('app')?.dataset?.shop || '';
 }
 
 async function request(method, url, body = null) {
     const token = await sessionToken();
     const opts = { method, headers: { Accept: 'application/json' } };
-    // Demo mode: the JWT middleware resolves the demo store from the ?demo=1 flag.
-    if (window.demoMode && !url.includes('?')) {
-        url += '?demo=1';
-    } else if (window.demoMode) {
-        url += '&demo=1';
+
+    // Always pass shop domain as query param so the backend can resolve the
+    // store even when App Bridge / JWT is not available (first load, expired
+    // token, missing host param, etc.).
+    const params = new URLSearchParams();
+    if (window.demoMode) {
+        params.set('demo', '1');
     }
+    const shop = getShopDomain();
+    if (shop) {
+        params.set('shop', shop);
+    }
+    const qs = params.toString();
+    if (qs) {
+        url += (url.includes('?') ? '&' : '?') + qs;
+    }
+
     if (token !== 'none') {
         opts.headers.Authorization = `Bearer ${token}`;
     }
@@ -37,12 +57,13 @@ async function request(method, url, body = null) {
         opts.headers['Content-Type'] = 'application/json';
         opts.body = JSON.stringify(body);
     }
+
     const res = await fetch(url, opts);
+
     if (res.status === 401) {
-        if (window.shopifyApp) {
-            window.shopifyApp.redirect({ path: '/auth' }); // re-auth embedded session
-        }
-        throw new Error('Session expired — please reload');
+        // Don't redirect to /auth in a loop — just throw with a clear message.
+        // The caller (App.vue / Onboarding.vue) decides what to show.
+        throw new Error('Session expired — please reload the app');
     }
     if (!res.ok) {
         const data = await res.json().catch(() => ({}));

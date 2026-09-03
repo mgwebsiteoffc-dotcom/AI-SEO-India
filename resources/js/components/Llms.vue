@@ -27,6 +27,12 @@
 
     <div class="stat-card">
       <div class="text-sm font-bold text-slate-900 mb-2">Preview — {{ entries.length }} entries</div>
+      <div v-if="!entries.length" class="text-xs text-slate-500 py-3">
+        No entries yet. Click <b>Generate / refresh</b> to build from your store's catalog.
+      </div>
+      <div v-else-if="isGeneric" class="text-xs text-amber-700 bg-amber-50 rounded-xl p-3 mb-3">
+        ⚠️ These are generic entries — the app couldn't fetch your store's catalog. Click <b>Generate / refresh</b> to retry. If this persists, check that the app has permission to read your products.
+      </div>
       <pre class="bg-slate-900 text-slate-100 text-xs rounded-xl p-4 overflow-auto max-h-96 leading-relaxed">{{ content || 'Generate to preview…' }}</pre>
     </div>
 
@@ -38,7 +44,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { api } from '../api';
 
 const enabled = ref(false);
@@ -47,6 +53,13 @@ const proxyUrl = ref('');
 const content = ref('');
 const robots = ref('');
 const busy = ref(false);
+
+// Detect if entries are generic fallback (no real product data)
+const isGeneric = computed(() => {
+    if (entries.value.length === 0) return false;
+    const hasProducts = entries.value.some(e => e.kind === 'product');
+    return !hasProducts && entries.value.length <= 3;
+});
 
 async function load() {
     const d = await api.get('/api/llms');

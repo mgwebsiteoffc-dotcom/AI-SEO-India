@@ -123,6 +123,22 @@ class ApiController extends Controller
         ];
     }
 
+    /** POST /api/audit/issue/{id}/toggle — mark issue as fixed/unfixed */
+    public function toggleIssue(Request $request, int $id)
+    {
+        $store = $this->store($request);
+        $issue = \App\Models\AuditIssue::whereHas('run', function ($q) use ($store) {
+            $q->where('store_id', $store->id);
+        })->findOrFail($id);
+
+        $issue->update(['is_fixed' => !$issue->is_fixed]);
+
+        return response()->json([
+            'ok' => true,
+            'is_fixed' => $issue->is_fixed,
+        ]);
+    }
+
     // ---------------------------------------------------------------- tracker
 
     public function tracker(Request $request)
@@ -148,7 +164,7 @@ class ApiController extends Controller
                 'total' => $s->total_queries,
                 'samples' => $s->samples,
             ])->values(),
-            'llm_mode' => (bool) (config('services.openai.key') || config('services.gemini.key')),
+            'llm_mode' => (bool) (config('services.openrouter.key') || config('services.openai.key') || config('services.gemini.key')),
         ]);
     }
 
@@ -351,7 +367,16 @@ class ApiController extends Controller
         if ($store->is_demo && ! $service->configured()) {
             return response()->json($service->demoReport());
         }
-        return response()->json($service->aiTrafficReport(['days' => (int) $request->input('days', 30)]));
+
+        $report = $service->aiTrafficReport(['days' => (int) $request->input('days', 30)]);
+
+        // Let the frontend know if the store has entered their GA4 Property ID
+        $report['has_property_id'] = ! empty($store->settings['ga4_property_id']);
+
+        // Expose the service account email so stores know what to add as Viewer
+        $report['service_account_email'] = config('services.ga4.client_email') ?: null;
+
+        return response()->json($report);
     }
 
     // ---------------------------------------------------------------- settings
@@ -367,6 +392,7 @@ class ApiController extends Controller
             'whatsapp_number' => $settings['whatsapp_number'] ?? null,
             'language' => $settings['language'] ?? 'en',
             'ga4_property_id' => $settings['ga4_property_id'] ?? null,
+            'gsc_property' => $settings['gsc_property'] ?? null,
         ]);
     }
 
@@ -379,11 +405,36 @@ class ApiController extends Controller
             ? $request->input('language') : ($settings['language'] ?? 'en');
         $ga4Id = trim((string) $request->input('ga4_property_id', $settings['ga4_property_id'] ?? ''));
         $settings['ga4_property_id'] = preg_match('/^\d{6,12}$/', $ga4Id) ? $ga4Id : null;
+        $gscProperty = trim((string) $request->input('gsc_property', $settings['gsc_property'] ?? ''));
+        $settings['gsc_property'] = $gscProperty !== '' ? $gscProperty : null;
         $store->update([
             'brand_name' => trim((string) $request->input('brand_name', $store->brand_name)),
             'domain' => trim((string) $request->input('domain', $store->domain)),
             'settings' => $settings,
         ]);
+        return response()->json(['ok' => true]);
+    }
+
+    // --------------------------------------------------------- onboarding
+
+    public function completeOnboarding(Request $request)
+    {
+        $store = $this->store($request);
+
+        $brandName = trim((string) $request->input('brand_name', ''));
+        $domain = trim((string) $request->input('domain', ''));
+        $settings = $store->settings ?? [];
+        $settings['whatsapp_number'] = trim((string) $request->input('whatsapp_number', ''));
+        $settings['language'] = in_array($request->input('language'), ['en', 'hi', 'hinglish'], true)
+            ? $request->input('language') : 'en';
+
+        $store->update([
+            'brand_name' => $brandName ?: null,
+            'domain' => $domain ?: null,
+            'onboarding_completed' => true,
+            'settings' => $settings,
+        ]);
+
         return response()->json(['ok' => true]);
     }
 }

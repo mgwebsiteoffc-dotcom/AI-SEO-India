@@ -1,5 +1,9 @@
 <template>
-  <div class="min-h-screen">
+  <!-- Onboarding flow for new stores -->
+  <Onboarding v-if="showOnboarding" :shop="store.shop" :brand="store.brand" @complete="onOnboardingComplete" />
+
+  <!-- Main app shell -->
+  <div v-else class="min-h-screen">
     <!-- Top bar -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
       <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -58,6 +62,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
 import { api } from './api';
+import Onboarding from './components/Onboarding.vue';
 import Dashboard from './components/Dashboard.vue';
 import Audit from './components/Audit.vue';
 import Tracker from './components/Tracker.vue';
@@ -75,9 +80,19 @@ const store = reactive({
     brand: el.dataset.brand || '',
     domain: el.dataset.domain || '',
     plan: el.dataset.plan || 'free',
-    is_demo: el.dataset.demo === '1', // dataset read here (module scope) — window.demoMode is set later in app.js
+    is_demo: el.dataset.demo === '1',
 });
 const data = reactive({ score: null, grade: null, trend: [], engines: [], store: {} });
+
+// Onboarding: show if the store hasn't completed onboarding yet
+const onboardingDone = el.dataset.onboarding === '1';
+const showOnboarding = ref(!onboardingDone && !store.is_demo);
+
+function onOnboardingComplete() {
+    showOnboarding.value = false;
+    // Reload dashboard data now that settings are saved
+    load();
+}
 
 const tabs = [
     { key: 'dashboard', label: 'Dashboard' },
@@ -103,7 +118,7 @@ async function load() {
 
 function onAudited() {
     load();
-    tab.value = 'dashboard';
+    // Stay on audit tab to show results — don't redirect to dashboard
 }
 
 function logout() {
