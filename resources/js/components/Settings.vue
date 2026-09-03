@@ -25,19 +25,18 @@
           </select>
         </div>
         <div>
-          <label class="text-xs font-semibold text-slate-600">GA4 Property ID</label>
+          <label class="text-xs font-semibold text-slate-600">GA4 Property ID (optional)</label>
           <input v-model="ga4Id" class="input mt-1" placeholder="e.g. 123456789" />
           <div class="text-[11px] text-slate-500 mt-1">
             Your Google Analytics 4 Property ID (9-digit number). Find it in GA4 → Admin → Property Settings.
-            After saving, you'll need to add our service account as a Viewer on your GA4 property (instructions shown in AI Traffic tab).
+            Enables AI traffic data from Google Analytics.
           </div>
         </div>
         <div>
-          <label class="text-xs font-semibold text-slate-600">Google Search Console Property URL (optional)</label>
+          <label class="text-xs font-semibold text-slate-600">Google Search Console Property (optional)</label>
           <input v-model="gscProperty" class="input mt-1" placeholder="e.g. https://yourdomain.com or sc-domain:yourdomain.com" />
           <div class="text-[11px] text-slate-500 mt-1">
-            Your Search Console property (domain or URL prefix). Used to show search impressions, clicks and AI-related queries.
-            Add the same service account email as a <b>User</b> in Search Console → Settings → Users and permissions.
+            Your Search Console property URL. Enables search performance data (impressions, clicks, queries).
           </div>
         </div>
         <div class="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-xs text-slate-600">

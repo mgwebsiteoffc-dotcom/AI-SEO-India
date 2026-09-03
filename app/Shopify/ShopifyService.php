@@ -104,9 +104,18 @@ class ShopifyService
         try {
             $headers = function_exists('getallheaders') ? getallheaders() : self::headersFromServer();
             $cookies = $_COOKIE ?? [];
+
+            // No Authorization header → no JWT session. This is normal for:
+            // - First page loads (before App Bridge sends JWT)
+            // - Direct API calls with ?shop= fallback
+            // - Non-embedded requests (diagnostic endpoints, etc.)
+            if (empty($headers['Authorization'] ?? $headers['authorization'] ?? null)) {
+                return null;
+            }
+
             $sessionId = OAuth::getCurrentSessionId($headers ?: [], $cookies, true);
             if (! $sessionId) {
-                return null; // No JWT yet — first load or non-embedded request. Normal.
+                return null;
             }
             // Extract shop from the JWT session id: "{userId}_{shop}"
             $shop = null;
@@ -116,10 +125,11 @@ class ShopifyService
             }
             return $shop ? Store::where('shop', $shop)->first() : null;
         } catch (\Throwable $e) {
-            // Only log unexpected errors, not the common "missing auth header" case
-            if (stripos($e->getMessage(), 'Missing Authorization') === false) {
-                Log::debug('Shopify session load failed: ' . $e->getMessage());
+            // Suppress the common "Missing Authorization" error — it's expected
+            if (stripos($e->getMessage(), 'Missing Authorization') !== false) {
+                return null;
             }
+            Log::debug('Shopify session load failed: ' . $e->getMessage());
             return null;
         }
     }

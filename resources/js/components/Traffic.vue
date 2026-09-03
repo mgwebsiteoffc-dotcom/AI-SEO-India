@@ -64,42 +64,17 @@
       <p class="text-xs text-slate-500 mt-1">Sessions, transactions and purchase revenue where the session source is an AI platform (ChatGPT, Gemini, Perplexity, Grok, Claude, DeepSeek, Copilot).</p>
 
       <div v-if="!ga4.configured" class="mt-3 text-xs bg-slate-50 rounded-xl p-4 leading-relaxed">
-        <div class="font-bold text-slate-900 mb-2">Connect Google Analytics (GA4) — 2 min setup</div>
-        <template v-if="!ga4.has_property_id">
-          <p class="text-slate-600">Enter your <b>GA4 Property ID</b> in the <b>Settings</b> tab to see AI traffic data.</p>
-          <p class="text-slate-500 mt-1">Find it: Google Analytics → Admin → Property Settings → Property ID (9-digit number like <code class="bg-slate-100 px-1 rounded">123456789</code>)</p>
+        <template v-if="ga4.has_property_id && !ga4.service_account_email">
+          <p class="text-slate-600">Your GA4 Property ID is saved. GA4 integration is being set up — data will appear once configured.</p>
         </template>
-        <template v-else-if="ga4.service_account_email">
-          <p class="text-slate-600">Your GA4 Property ID is saved. Now add our service account as a <b>Viewer</b> on your GA4 property:</p>
-          <div class="mt-2 space-y-1.5">
-            <div class="flex items-start gap-2">
-              <span class="font-bold text-brand-600 shrink-0">1.</span>
-              <span>Open <a href="https://analytics.google.com" target="_blank" class="text-brand-600 hover:underline font-semibold">Google Analytics</a> → <b>Admin</b> (gear icon)</span>
-            </div>
-            <div class="flex items-start gap-2">
-              <span class="font-bold text-brand-600 shrink-0">2.</span>
-              <span>Under <b>Property</b>, click <b>Property access management</b></span>
-            </div>
-            <div class="flex items-start gap-2">
-              <span class="font-bold text-brand-600 shrink-0">3.</span>
-              <span>Click <b>+</b> → <b>Add users</b></span>
-            </div>
-            <div class="flex items-start gap-2">
-              <span class="font-bold text-brand-600 shrink-0">4.</span>
-              <span>
-                Enter this email:
-                <code class="bg-amber-100 px-1.5 py-0.5 rounded font-bold text-amber-900 select-all">{{ ga4.service_account_email }}</code>
-              </span>
-            </div>
-            <div class="flex items-start gap-2">
-              <span class="font-bold text-brand-600 shrink-0">5.</span>
-              <span>Select role: <b>Viewer</b> → Click <b>Add</b></span>
-            </div>
-          </div>
-          <p class="text-slate-500 mt-3">After adding, refresh this page. GA4 data will appear within a few minutes.</p>
+        <template v-else-if="ga4.has_property_id && ga4.service_account_email">
+          <p class="text-slate-600">Your GA4 Property ID is saved. To connect, add this email as a <b>Viewer</b> in your GA4 → Admin → Property access management:</p>
+          <code class="block mt-2 bg-amber-100 px-2 py-1 rounded font-bold text-amber-900 select-all text-[11px]">{{ ga4.service_account_email }}</code>
+          <p class="text-slate-500 mt-2">After adding, data appears within 24 hours.</p>
         </template>
         <template v-else>
-          <p class="text-slate-600">Your GA4 Property ID is saved. The app is connecting to Google Analytics — this may take a few minutes.</p>
+          <p class="text-slate-600">Enter your <b>GA4 Property ID</b> in <b>Settings</b> to see AI traffic from Google Analytics.</p>
+          <p class="text-slate-500 mt-1">Find it: GA4 → Admin → Property Settings → Property ID (9-digit number)</p>
         </template>
       </div>
 

@@ -77,6 +77,9 @@ Route::get('/billing/callback', [ApiController::class, 'billingCallback']);
 // Webhooks (verified by SDK HMAC) — topic can contain slashes, e.g. app/uninstalled
 Route::post('/webhooks/{topic}', [WebhookController::class, 'handle'])->where('topic', '.*');
 
+// Public llms.txt — accessible by AI crawlers directly (no Shopify signature needed)
+Route::get('/llms.txt', [ProxyController::class, 'publicLlmsTxt'])->name('llms.txt.public');
+
 // App Proxy (signed by Shopify, served on the store's own domain)
 Route::prefix('apps/ai-visibility')->middleware(VerifyProxyRequest::class)->group(function () {
     Route::get('/llms.txt', [ProxyController::class, 'llmsTxt']);

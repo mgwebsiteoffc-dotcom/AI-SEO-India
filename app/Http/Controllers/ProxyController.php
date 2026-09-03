@@ -21,7 +21,45 @@ class ProxyController extends Controller
         return $request->attributes->get('store');
     }
 
-    /** GET .../llms.txt → the AI reading list */
+    /**
+     * GET /llms.txt — public endpoint accessible by AI crawlers.
+     * Uses ?shop= query param to identify the store (no Shopify signature needed).
+     * Falls back to the first non-demo store if no shop param.
+     */
+    public function publicLlmsTxt(Request $request)
+    {
+        $shop = strtolower(trim((string) $request->query('shop', '')));
+        $store = null;
+
+        if ($shop && preg_match('/\.myshopify\.com$/', $shop)) {
+            $store = Store::where('shop', $shop)->first();
+        }
+
+        // Fallback: find the store from the request host
+        if (!$store) {
+            $host = strtolower($request->getHost());
+            $store = Store::where('domain', $host)->first()
+                ?? Store::where('shop', 'like', '%' . $host . '%')->first();
+        }
+
+        // Last fallback: first non-demo store
+        if (!$store) {
+            $store = Store::where('is_demo', false)->whereNotNull('shopify_token')->first();
+        }
+
+        if (!$store) {
+            return response('Not found', 404);
+        }
+
+        $content = app(LlmsGenerator::class)->generate($store);
+        return response($content, 200, [
+            'Content-Type' => 'text/plain; charset=utf-8',
+            'Cache-Control' => 'public, max-age=3600',
+            'Access-Control-Allow-Origin' => '*',
+        ]);
+    }
+
+    /** GET .../llms.txt → the AI reading list (via App Proxy) */
     public function llmsTxt(Request $request)
     {
         $store = $this->store($request);
