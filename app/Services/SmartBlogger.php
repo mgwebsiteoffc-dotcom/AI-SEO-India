@@ -202,6 +202,7 @@ class SmartBlogger
                         'blogId' => $blogId,
                         'title' => $post->title,
                         'body' => $bodyHtml,
+                        'author' => ['name' => $store->brand_name ?: 'AI Visibility'],
                         'tags' => ['ai-visibility', strtolower(str_replace(' ', '-', $post->category)), 'seo'],
                         'isPublished' => true,
                     ],

@@ -242,6 +242,7 @@ class AuthController extends Controller
                         'blogId' => $blogId,
                         'title' => 'AI Visibility Test — ' . now()->format('d M H:i'),
                         'body' => '<p>Test article from AI Visibility app. Delete this.</p>',
+                        'author' => ['name' => 'AI Visibility'],
                         'tags' => ['ai-visibility', 'test'],
                         'isPublished' => true,
                     ],
