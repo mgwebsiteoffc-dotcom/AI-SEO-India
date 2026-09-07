@@ -32,7 +32,7 @@
           </li>
         </ul>
         <button v-if="p.key !== current" @click="subscribe(p.key)" :disabled="busy === p.key" class="btn-primary w-full mt-5 text-xs">
-          {{ busy === p.key ? 'Opening Shopify checkout…' : p.price === 0 ? 'Downgrade to Free' : 'Start 3-day trial' }}
+          {{ busy === p.key ? 'Upgrading…' : p.price === 0 ? 'Downgrade to Free' : 'Start 3-day trial' }}
         </button>
         <button v-else-if="p.key !== 'free'" @click="cancel" class="btn-secondary w-full mt-5 text-xs">Cancel subscription</button>
       </div>
@@ -69,11 +69,34 @@ async function subscribe(key) {
     busy.value = key;
     try {
         const d = await api.post('/api/billing/subscribe', { plan: key, interval: interval.value });
+
+        // Admin-managed billing (custom distribution) — plan upgraded directly
+        if (d.admin_managed) {
+            current.value = key;
+            alert(d.message || 'Plan updated successfully!');
+            busy.value = null;
+            return;
+        }
+
+        // Demo mode
+        if (d.demo) {
+            current.value = key;
+            alert(d.message || 'Demo: plan updated');
+            busy.value = null;
+            return;
+        }
+
+        // Shopify billing — redirect to checkout
         const url = d.confirmationUrl;
-        if (window.shopifyApp) {
-            window.shopifyApp.redirect({ path: url });
+        if (url) {
+            if (window.shopifyApp) {
+                window.shopifyApp.redirect({ path: url });
+            } else {
+                window.top.location.href = url;
+            }
         } else {
-            window.top.location.href = url;
+            current.value = key;
+            alert('Plan updated!');
         }
     } catch (e) {
         alert(e.message);

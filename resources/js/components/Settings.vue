@@ -26,8 +26,18 @@
         </div>
         <div>
           <label class="text-xs font-semibold text-slate-600">GA4 Property ID (optional)</label>
-          <input v-model="ga4Id" class="input mt-1" placeholder="e.g. 123456789 — service account credentials come from .env" />
-          <div class="text-[11px] text-slate-500 mt-1">Powers the GA4 Data API report in AI Traffic &amp; Orders.</div>
+          <input v-model="ga4Id" class="input mt-1" placeholder="e.g. 123456789" />
+          <div class="text-[11px] text-slate-500 mt-1">
+            Your Google Analytics 4 Property ID (9-digit number). Find it in GA4 → Admin → Property Settings.
+            Enables AI traffic data from Google Analytics.
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-600">Google Search Console Property (optional)</label>
+          <input v-model="gscProperty" class="input mt-1" placeholder="e.g. https://yourdomain.com or sc-domain:yourdomain.com" />
+          <div class="text-[11px] text-slate-500 mt-1">
+            Your Search Console property URL. Enables search performance data (impressions, clicks, queries).
+          </div>
         </div>
         <div class="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
           <span>Shopify store</span>
@@ -70,6 +80,7 @@ const shop = ref('');
 const whatsapp = ref('');
 const language = ref('en');
 const ga4Id = ref('');
+const gscProperty = ref('');
 
 onMounted(async () => {
     try {
@@ -80,6 +91,7 @@ onMounted(async () => {
         whatsapp.value = d.whatsapp_number || '';
         language.value = d.language || 'en';
         ga4Id.value = d.ga4_property_id || '';
+        gscProperty.value = d.gsc_property || '';
     } catch (e) { /* session */ }
 });
 
@@ -90,6 +102,7 @@ async function save() {
         whatsapp_number: whatsapp.value,
         language: language.value,
         ga4_property_id: ga4Id.value,
+        gsc_property: gscProperty.value,
     });
     emit('saved');
     alert('Saved ✓');

@@ -123,6 +123,22 @@ class ApiController extends Controller
         ];
     }
 
+    /** POST /api/audit/issue/{id}/toggle — mark issue as fixed/unfixed */
+    public function toggleIssue(Request $request, int $id)
+    {
+        $store = $this->store($request);
+        $issue = \App\Models\AuditIssue::whereHas('run', function ($q) use ($store) {
+            $q->where('store_id', $store->id);
+        })->findOrFail($id);
+
+        $issue->update(['is_fixed' => !$issue->is_fixed]);
+
+        return response()->json([
+            'ok' => true,
+            'is_fixed' => $issue->is_fixed,
+        ]);
+    }
+
     // ---------------------------------------------------------------- tracker
 
     public function tracker(Request $request)
@@ -148,7 +164,7 @@ class ApiController extends Controller
                 'total' => $s->total_queries,
                 'samples' => $s->samples,
             ])->values(),
-            'llm_mode' => (bool) (config('services.openai.key') || config('services.gemini.key')),
+            'llm_mode' => (bool) (config('services.openrouter.key') || config('services.openai.key') || config('services.gemini.key')),
         ]);
     }
 
@@ -333,6 +349,280 @@ class ApiController extends Controller
         return response()->json(app(BillingService::class)->cancel($store));
     }
 
+    // --------------------------------------------------------- IndexNow
+
+    /** POST /api/indexnow/submit — submit all store pages to IndexNow */
+    public function indexNowSubmit(Request $request)
+    {
+        $store = $this->store($request);
+        $result = app(\App\Services\IndexNowService::class)->submitAll($store);
+        return response()->json($result);
+    }
+
+    /** POST /api/indexnow/submit-url — submit a single URL to IndexNow */
+    public function indexNowSubmitUrl(Request $request)
+    {
+        $store = $this->store($request);
+        $url = (string) $request->input('url');
+        if (empty($url)) {
+            return response()->json(['error' => 'URL required'], 422);
+        }
+        $result = app(\App\Services\IndexNowService::class)->submitUrl($store, $url);
+        return response()->json($result);
+    }
+
+    // --------------------------------------------------------- Brand Signals
+
+    /** GET /api/brand-signals — analyze brand signals (cached 24h, stores snapshot) */
+    public function brandSignals(Request $request)
+    {
+        $store = $this->store($request);
+
+        // Cache for 24 hours
+        $cacheKey = 'brand_signals_' . $store->id;
+        $cached = \Illuminate\Support\Facades\Cache::get($cacheKey);
+        if ($cached && !$request->query('refresh')) {
+            return response()->json($cached);
+        }
+
+        $result = app(\App\Services\BrandSignalsService::class)->analyze($store);
+        \Illuminate\Support\Facades\Cache::put($cacheKey, $result, now()->addHours(24));
+
+        // Store snapshot for historical comparison
+        \App\Models\AnalysisSnapshot::store_snapshot(
+            $store->id,
+            'brand_signals',
+            $result,
+            $result['score'] ?? 0
+        );
+
+        return response()->json($result);
+    }
+
+    // --------------------------------------------------------- Speed Analysis
+
+    /** GET /api/speed-analysis — run page speed analysis (cached 24h, stores snapshot) */
+    public function speedAnalysis(Request $request)
+    {
+        $store = $this->store($request);
+        $path = $request->query('path', '/');
+
+        // Cache for 24 hours
+        $cacheKey = 'speed_analysis_' . $store->id . '_' . md5($path);
+        $cached = \Illuminate\Support\Facades\Cache::get($cacheKey);
+        if ($cached && !$request->query('refresh')) {
+            return response()->json($cached);
+        }
+
+        $result = app(\App\Services\SpeedAnalysisService::class)->analyze($store, $path);
+
+        // Only cache successful results
+        if ($result['ok'] ?? false) {
+            \Illuminate\Support\Facades\Cache::put($cacheKey, $result, now()->addHours(24));
+
+            // Store snapshot for historical comparison
+            \App\Models\AnalysisSnapshot::store_snapshot(
+                $store->id,
+                'speed_analysis',
+                $result,
+                $result['scores']['performance'] ?? 0
+            );
+        }
+
+        return response()->json($result);
+    }
+
+    // --------------------------------------------------------- Product Optimizer
+
+    /** POST /api/product-optimizer/optimize — optimize a single product */
+    public function optimizeProduct(Request $request)
+    {
+        $store = $this->store($request);
+        $handle = (string) $request->input('handle');
+
+        // Fetch product from Shopify
+        $product = $this->fetchProductByHandle($store, $handle);
+        if (!$product) {
+            return response()->json(['error' => 'Product not found'], 404);
+        }
+
+        $result = app(\App\Services\ProductOptimizerService::class)->optimize($store, $product);
+        return response()->json($result);
+    }
+
+    /** POST /api/product-optimizer/optimize-all — bulk optimize all products */
+    public function optimizeAllProducts(Request $request)
+    {
+        $store = $this->store($request);
+        $limit = (int) $request->input('limit', 10);
+        $result = app(\App\Services\ProductOptimizerService::class)->optimizeAll($store, $limit);
+        return response()->json($result);
+    }
+
+    /** GET /api/product-optimizer/pending — get pending optimizations */
+    public function pendingOptimizations(Request $request)
+    {
+        $store = $this->store($request);
+        $results = app(\App\Services\ProductOptimizerService::class)->getPendingOptimizations($store);
+        return response()->json(['ok' => true, 'results' => $results]);
+    }
+
+    /** POST /api/product-optimizer/approve — approve/reject optimization */
+    public function approveOptimization(Request $request)
+    {
+        $store = $this->store($request);
+        $handle = (string) $request->input('handle');
+        $action = $request->input('action');
+
+        if (!in_array($action, ['approved', 'rejected'], true)) {
+            return response()->json(['error' => 'Invalid action'], 422);
+        }
+
+        $result = app(\App\Services\ProductOptimizerService::class)->approveOptimization($store, $handle, $action);
+        return response()->json($result);
+    }
+
+    private function fetchProductByHandle(Store $store, string $handle): ?array
+    {
+        try {
+            $client = \App\Shopify\ShopifyService::client($store);
+            $res = $client->query([
+                'query' => <<<'GRAPHQL'
+                query ProductByHandle($handle: String!) {
+                  productByHandle(handle: $handle) {
+                    title
+                    handle
+                    description(truncateAt: 500)
+                    availableForSale
+                    priceRange { minVariantPrice { amount } }
+                    featuredImage { url }
+                  }
+                }
+                GRAPHQL,
+                'variables' => ['handle' => $handle],
+            ]);
+
+            $p = $res->getDecodedBody()['data']['productByHandle'] ?? null;
+            if (!$p) return null;
+
+            return [
+                'title' => $p['title'],
+                'handle' => $p['handle'],
+                'description' => $p['description'] ?? '',
+                'price' => (float) ($p['priceRange']['minVariantPrice']['amount'] ?? 0),
+                'available' => $p['availableForSale'] ?? false,
+                'image' => $p['featuredImage']['url'] ?? null,
+            ];
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    // --------------------------------------------------------- Shopping Feed
+
+    /** GET /api/shopping-feed — generate AI shopping feed (cached 1h) */
+    public function shoppingFeed(Request $request)
+    {
+        $store = $this->store($request);
+
+        // Cache for 1 hour
+        $cacheKey = 'shopping_feed_' . $store->id;
+        $cached = \Illuminate\Support\Facades\Cache::get($cacheKey);
+        if ($cached && !$request->query('refresh')) {
+            return response()->json($cached);
+        }
+
+        $result = app(\App\Services\ShoppingFeedService::class)->generate($store);
+
+        if ($result['ok'] ?? false) {
+            \Illuminate\Support\Facades\Cache::put($cacheKey, $result, now()->addHours(1));
+        }
+
+        return response()->json($result);
+    }
+
+    // --------------------------------------------------------- Content Calendar
+
+    /** GET /api/content/calendar — get scheduled posts */
+    public function contentCalendar(Request $request)
+    {
+        $store = $this->store($request);
+        $days = (int) $request->input('days', 30);
+        $result = app(\App\Services\ContentCalendarService::class)->getCalendar($store, $days);
+        return response()->json($result);
+    }
+
+    // --------------------------------------------------------- Analytics
+
+    /** GET /api/analytics — comprehensive analytics dashboard */
+    public function analytics(Request $request)
+    {
+        $store = $this->store($request);
+        $days = (int) $request->input('days', 30);
+        $result = app(\App\Services\AnalyticsService::class)->dashboard($store, $days);
+        return response()->json($result);
+    }
+
+    /** GET /analytics/report — export report (public for PDF export) */
+    public function analyticsReport(Request $request)
+    {
+        // Try to get store from session, or from query param
+        $store = $this->store($request);
+        if (!$store) {
+            $shop = strtolower(trim((string) $request->query('shop', '')));
+            if ($shop) {
+                $store = Store::where('shop', $shop)->first();
+            }
+        }
+        if (!$store) {
+            $store = Store::where('is_demo', false)->whereNotNull('shopify_token')->first();
+        }
+        if (!$store) {
+            return response('No store found', 404);
+        }
+
+        $days = (int) $request->input('days', 30);
+        $format = $request->input('format', 'json');
+
+        $report = app(\App\Services\AnalyticsService::class)->generateReport($store, $days);
+
+        if ($format === 'html') {
+            return view('analytics.report', ['report' => $report]);
+        }
+
+        return response()->json($report);
+    }
+
+    /** POST /api/content/{id}/schedule — schedule a post */
+    public function schedulePost(Request $request, int $id)
+    {
+        $store = $this->store($request);
+        $scheduledAt = (string) $request->input('scheduled_at');
+        if (empty($scheduledAt)) {
+            return response()->json(['error' => 'scheduled_at required'], 422);
+        }
+        $result = app(\App\Services\ContentCalendarService::class)->schedule($store, $id, $scheduledAt);
+        return response()->json($result);
+    }
+
+    /** POST /api/content/{id}/unschedule — cancel scheduled post */
+    public function unschedulePost(Request $request, int $id)
+    {
+        $store = $this->store($request);
+        $post = $store->contentPosts()->findOrFail($id);
+        $post->update(['scheduled_at' => null, 'status' => 'generated']);
+        return response()->json(['ok' => true]);
+    }
+
+    /** GET /api/content/ideas — get AI content ideas */
+    public function contentIdeas(Request $request)
+    {
+        $store = $this->store($request);
+        $count = (int) $request->input('count', 5);
+        $result = app(\App\Services\ContentCalendarService::class)->generateIdeas($store, $count);
+        return response()->json($result);
+    }
+
     // ------------------------------------------------------------ attribution
 
     public function attribution(Request $request)
@@ -351,7 +641,16 @@ class ApiController extends Controller
         if ($store->is_demo && ! $service->configured()) {
             return response()->json($service->demoReport());
         }
-        return response()->json($service->aiTrafficReport(['days' => (int) $request->input('days', 30)]));
+
+        $report = $service->aiTrafficReport(['days' => (int) $request->input('days', 30)]);
+
+        // Let the frontend know if the store has entered their GA4 Property ID
+        $report['has_property_id'] = ! empty($store->settings['ga4_property_id']);
+
+        // Expose the service account email so stores know what to add as Viewer
+        $report['service_account_email'] = config('services.ga4.client_email') ?: null;
+
+        return response()->json($report);
     }
 
     // ---------------------------------------------------------------- settings
@@ -367,6 +666,7 @@ class ApiController extends Controller
             'whatsapp_number' => $settings['whatsapp_number'] ?? null,
             'language' => $settings['language'] ?? 'en',
             'ga4_property_id' => $settings['ga4_property_id'] ?? null,
+            'gsc_property' => $settings['gsc_property'] ?? null,
         ]);
     }
 
@@ -379,11 +679,36 @@ class ApiController extends Controller
             ? $request->input('language') : ($settings['language'] ?? 'en');
         $ga4Id = trim((string) $request->input('ga4_property_id', $settings['ga4_property_id'] ?? ''));
         $settings['ga4_property_id'] = preg_match('/^\d{6,12}$/', $ga4Id) ? $ga4Id : null;
+        $gscProperty = trim((string) $request->input('gsc_property', $settings['gsc_property'] ?? ''));
+        $settings['gsc_property'] = $gscProperty !== '' ? $gscProperty : null;
         $store->update([
             'brand_name' => trim((string) $request->input('brand_name', $store->brand_name)),
             'domain' => trim((string) $request->input('domain', $store->domain)),
             'settings' => $settings,
         ]);
+        return response()->json(['ok' => true]);
+    }
+
+    // --------------------------------------------------------- onboarding
+
+    public function completeOnboarding(Request $request)
+    {
+        $store = $this->store($request);
+
+        $brandName = trim((string) $request->input('brand_name', ''));
+        $domain = trim((string) $request->input('domain', ''));
+        $settings = $store->settings ?? [];
+        $settings['whatsapp_number'] = trim((string) $request->input('whatsapp_number', ''));
+        $settings['language'] = in_array($request->input('language'), ['en', 'hi', 'hinglish'], true)
+            ? $request->input('language') : 'en';
+
+        $store->update([
+            'brand_name' => $brandName ?: null,
+            'domain' => $domain ?: null,
+            'onboarding_completed' => true,
+            'settings' => $settings,
+        ]);
+
         return response()->json(['ok' => true]);
     }
 }

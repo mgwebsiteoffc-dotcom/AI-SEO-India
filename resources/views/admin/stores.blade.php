@@ -44,6 +44,7 @@
                             </td>
                             <td class="px-4 py-3">
                                 <span class="badge @if ($s->plan === 'free') badge-slate @elseif ($s->plan === 'grow') badge-green @elseif ($s->plan === 'scale') @endif">{{ $s->plan }}</span>
+                                @if ($s->is_custom)<span class="badge badge-blue ml-1">Custom</span>@endif
                                 <div class="text-[11px] text-slate-500 mt-1">{{ $s->billing_status }}@if ($s->billing_ends_at) · till {{ $s->billing_ends_at->format('d M Y') }}@endif</div>
                             </td>
                             <td class="px-4 py-3 text-[11px] text-slate-400">
@@ -63,6 +64,12 @@
                                                 @endforeach
                                             </select>
                                             <button class="btn-primary !py-1.5 text-[11px]">Save</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('admin.store.toggle-custom', $s) }}">
+                                            @csrf
+                                            <button class="btn !py-1.5 text-[11px]" title="Toggle custom distribution (admin-managed billing)">
+                                                {{ $s->is_custom ? 'Shopify' : 'Custom' }}
+                                            </button>
                                         </form>
                                         <form method="POST" action="{{ route('admin.store.delete', $s) }}" onsubmit="return confirm('Delete {{ $s->shop }}?')">
                                             @csrf

@@ -43,20 +43,26 @@
         <div class="text-sm font-bold text-slate-900 mb-3">Action plan — {{ openCount }} fixes to make</div>
         <div class="space-y-3">
           <div v-for="issue in issues" :key="issue.id"
-               class="rounded-xl border p-4"
-               :class="issue.is_fixed ? 'border-emerald-200 bg-emerald-50/50' : severityBorder[issue.severity]">
+               class="rounded-xl border p-4 transition-opacity"
+               :class="issue.is_fixed ? 'border-emerald-200 bg-emerald-50/50 opacity-70' : severityBorder[issue.severity]">
             <div class="flex items-start gap-3">
+              <label class="flex items-center gap-2 mt-0.5 shrink-0 cursor-pointer">
+                <input type="checkbox" :checked="issue.is_fixed" @change="toggleFixed(issue)"
+                       class="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+              </label>
               <span :class="severityBadge[issue.severity]" class="mt-0.5 shrink-0">{{ issue.severity }}</span>
               <div class="min-w-0 flex-1">
-                <div class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <div class="text-sm font-bold flex items-center gap-2"
+                     :class="issue.is_fixed ? 'text-emerald-700 line-through' : 'text-slate-900'">
                   {{ issue.title }}
-                  <span v-if="issue.is_fixed" class="badge-green">Fixed</span>
+                  <span v-if="issue.is_fixed" class="badge-green">Done</span>
                 </div>
-                <div class="text-xs text-slate-600 mt-1 leading-relaxed">{{ issue.detail }}</div>
-                <div class="text-xs text-brand-700 mt-2 bg-brand-50 rounded-lg p-2.5 leading-relaxed">
+                <div class="text-xs mt-1 leading-relaxed"
+                     :class="issue.is_fixed ? 'text-emerald-600' : 'text-slate-600'">{{ issue.detail }}</div>
+                <div v-if="!issue.is_fixed" class="text-xs text-brand-700 mt-2 bg-brand-50 rounded-lg p-2.5 leading-relaxed">
                   <b>Fix:</b> {{ issue.recommendation }}
                 </div>
-                <div v-if="fixHints[issue.code]" class="mt-2">
+                <div v-if="fixHints[issue.code] && !issue.is_fixed" class="mt-2">
                   <button @click="applyFix(issue)" class="btn-primary !py-1.5 text-xs" :disabled="fixing === issue.id">
                     {{ fixing === issue.id ? 'Applying…' : fixHints[issue.code] }}
                   </button>
@@ -118,6 +124,15 @@ async function run() {
         alert(e.message);
     } finally {
         running.value = false;
+    }
+}
+
+async function toggleFixed(issue) {
+    try {
+        const res = await api.post(`/api/audit/issue/${issue.id}/toggle`);
+        issue.is_fixed = res.is_fixed;
+    } catch (e) {
+        alert(e.message);
     }
 }
 

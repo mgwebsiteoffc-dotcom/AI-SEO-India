@@ -32,13 +32,20 @@ class ShopifyService
             return false;
         }
 
+        // Validate API version — Shopify versions follow YYYY-MM format
+        $apiVersion = config('shopify.api_version', '2025-04');
+        if (!preg_match('/^\d{4}-\d{2}$/', $apiVersion)) {
+            Log::warning("Invalid Shopify API version '{$apiVersion}' — falling back to 2025-04. Update SHOPIFY_API_VERSION in .env.");
+            $apiVersion = '2025-04';
+        }
+
         Context::initialize(
             apiKey: $apiKey,
             apiSecretKey: $secret,
             scopes: $scopes,
             hostName: $host,
             sessionStorage: new FileSessionStorage(storage_path('framework/sessions/shopify')),
-            apiVersion: config('shopify.api_version', '2025-04'),
+            apiVersion: $apiVersion,
             isEmbeddedApp: true,
             isPrivateApp: false,
         );
@@ -77,7 +84,24 @@ class ShopifyService
     public static function client(Store $store): Graphql
     {
         self::init();
+
+        if (empty($store->shopify_token)) {
+            throw new \RuntimeException(
+                "Store '{$store->shop}' has no access token. "
+                . "Please reinstall the app from Shopify admin to grant access. "
+                . "If using custom distribution, make sure the OAuth flow completed successfully."
+            );
+        }
+
         return new Graphql($store->shop, $store->shopify_token);
+    }
+
+    /**
+     * Check if a store has a valid Shopify API connection.
+     */
+    public static function hasValidToken(Store $store): bool
+    {
+        return !empty($store->shopify_token) && self::init();
     }
 
     /** Load the current embedded-app session (JWT from Authorization header). Returns store or null. */
@@ -88,13 +112,24 @@ class ShopifyService
             return Store::where('is_demo', true)->first();
         }
 
+        // If Shopify SDK is not configured, we can't validate JWTs.
+        // Return null so callers fall back to the shop query param.
         if (! self::init()) {
             return null;
         }
 
-        $headers = function_exists('getallheaders') ? getallheaders() : self::headersFromServer();
-        $cookies = $_COOKIE ?? [];
         try {
+            $headers = function_exists('getallheaders') ? getallheaders() : self::headersFromServer();
+            $cookies = $_COOKIE ?? [];
+
+            // No Authorization header → no JWT session. This is normal for:
+            // - First page loads (before App Bridge sends JWT)
+            // - Direct API calls with ?shop= fallback
+            // - Non-embedded requests (diagnostic endpoints, etc.)
+            if (empty($headers['Authorization'] ?? $headers['authorization'] ?? null)) {
+                return null;
+            }
+
             $sessionId = OAuth::getCurrentSessionId($headers ?: [], $cookies, true);
             if (! $sessionId) {
                 return null;
@@ -107,7 +142,11 @@ class ShopifyService
             }
             return $shop ? Store::where('shop', $shop)->first() : null;
         } catch (\Throwable $e) {
-            Log::debug('Shopify session load failed: '.$e->getMessage());
+            // Suppress the common "Missing Authorization" error — it's expected
+            if (stripos($e->getMessage(), 'Missing Authorization') !== false) {
+                return null;
+            }
+            Log::debug('Shopify session load failed: ' . $e->getMessage());
             return null;
         }
     }

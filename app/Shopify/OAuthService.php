@@ -34,11 +34,14 @@ class OAuthService
 
         $shop = strtolower(trim($query['shop'] ?? $session->getShop() ?? ''));
 
+        $scope = $session->getScope();
+        $scopesStr = is_array($scope) ? implode(',', $scope) : (string) ($scope ?? '');
+
         $store = Store::updateOrCreate(
             ['shop' => $shop],
             [
                 'shopify_token' => $session->getAccessToken(),
-                'scopes' => implode(',', $session->getScope() ?? []),
+                'scopes' => $scopesStr,
                 'trial_ends_at' => now()->addDays(3),
             ]
         );

@@ -1,5 +1,9 @@
 <template>
-  <div class="min-h-screen">
+  <!-- Onboarding flow for new stores -->
+  <Onboarding v-if="showOnboarding" :shop="store.shop" :brand="store.brand" @complete="onOnboardingComplete" />
+
+  <!-- Main app shell -->
+  <div v-else class="min-h-screen">
     <!-- Top bar -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
       <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -48,6 +52,13 @@
         <Traffic v-else-if="tab === 'traffic'" />
         <Llms v-else-if="tab === 'llms'" />
         <Schema v-else-if="tab === 'schema'" />
+        <IndexNow v-else-if="tab === 'indexnow'" />
+        <BrandSignals v-else-if="tab === 'brand'" />
+        <SpeedAnalysis v-else-if="tab === 'speed'" />
+        <ProductOptimizer v-else-if="tab === 'optimizer'" />
+        <ShoppingFeed v-else-if="tab === 'feed'" />
+        <ContentCalendar v-else-if="tab === 'calendar'" />
+        <Analytics v-else-if="tab === 'analytics'" />
         <Billing v-else-if="tab === 'billing'" />
         <Settings v-else-if="tab === 'settings'" :initial="data" @saved="load" />
       </main>
@@ -58,6 +69,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
 import { api } from './api';
+import Onboarding from './components/Onboarding.vue';
 import Dashboard from './components/Dashboard.vue';
 import Audit from './components/Audit.vue';
 import Tracker from './components/Tracker.vue';
@@ -65,6 +77,13 @@ import Content from './components/Content.vue';
 import Traffic from './components/Traffic.vue';
 import Llms from './components/Llms.vue';
 import Schema from './components/Schema.vue';
+import IndexNow from './components/IndexNow.vue';
+import BrandSignals from './components/BrandSignals.vue';
+import SpeedAnalysis from './components/SpeedAnalysis.vue';
+import ProductOptimizer from './components/ProductOptimizer.vue';
+import ShoppingFeed from './components/ShoppingFeed.vue';
+import ContentCalendar from './components/ContentCalendar.vue';
+import Analytics from './components/Analytics.vue';
 import Billing from './components/Billing.vue';
 import Settings from './components/Settings.vue';
 
@@ -75,18 +94,35 @@ const store = reactive({
     brand: el.dataset.brand || '',
     domain: el.dataset.domain || '',
     plan: el.dataset.plan || 'free',
-    is_demo: el.dataset.demo === '1', // dataset read here (module scope) — window.demoMode is set later in app.js
+    is_demo: el.dataset.demo === '1',
 });
 const data = reactive({ score: null, grade: null, trend: [], engines: [], store: {} });
+
+// Onboarding: show if the store hasn't completed onboarding yet
+const onboardingDone = el.dataset.onboarding === '1';
+const showOnboarding = ref(!onboardingDone && !store.is_demo);
+
+function onOnboardingComplete() {
+    showOnboarding.value = false;
+    // Reload dashboard data now that settings are saved
+    load();
+}
 
 const tabs = [
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'audit', label: 'AI Score & Audit' },
     { key: 'tracker', label: 'AI Visibility Tracker' },
     { key: 'content', label: 'Smart Blogger' },
+    { key: 'calendar', label: 'Content Calendar' },
+    { key: 'optimizer', label: 'Product Optimizer' },
+    { key: 'feed', label: 'AI Shopping Feed' },
+    { key: 'analytics', label: 'Analytics & Reports' },
     { key: 'traffic', label: 'AI Traffic & Orders' },
     { key: 'llms', label: 'llms.txt' },
     { key: 'schema', label: 'Schema Builder' },
+    { key: 'indexnow', label: 'Instant Indexing' },
+    { key: 'brand', label: 'Brand Signals' },
+    { key: 'speed', label: 'Speed Analysis' },
     { key: 'billing', label: 'Plans & Billing' },
     { key: 'settings', label: 'Settings' },
 ];
@@ -103,7 +139,7 @@ async function load() {
 
 function onAudited() {
     load();
-    tab.value = 'dashboard';
+    // Stay on audit tab to show results — don't redirect to dashboard
 }
 
 function logout() {

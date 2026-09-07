@@ -27,6 +27,10 @@ class AiVisibilityService
     public function availableEngines(): array
     {
         $engines = [];
+        // OpenRouter can simulate any engine
+        if (config('services.openrouter.key')) {
+            $engines[] = 'chatgpt';
+        }
         if (config('services.openai.key')) {
             $engines[] = 'chatgpt';
         }
@@ -36,7 +40,7 @@ class AiVisibilityService
         if (empty($engines)) {
             $engines[] = 'web'; // retrieval proxy
         }
-        return $engines;
+        return array_unique($engines);
     }
 
     /** Run a snapshot cycle for a store: returns snapshot rows created. */
@@ -96,6 +100,10 @@ class AiVisibilityService
         if ($engine === 'web') {
             return $this->checkRetrievalProxy($query, $domain);
         }
+        // OpenRouter works as a universal LLM proxy
+        if (config('services.openrouter.key')) {
+            return $this->checkLlm('openrouter', $query, $brand, $domain);
+        }
         if ($engine === 'chatgpt' && config('services.openai.key')) {
             return $this->checkLlm('openai', $query, $brand, $domain);
         }
@@ -143,7 +151,23 @@ Be strict: absent = false. Return ONLY the JSON object.
 PROMPT;
 
         try {
-            if ($provider === 'openai') {
+            if ($provider === 'openrouter') {
+                $response = Http::timeout(30)
+                    ->withToken(config('services.openrouter.key'))
+                    ->withHeaders([
+                        'HTTP-Referer' => config('app.url'),
+                        'X-Title' => 'AI Visibility Tracker',
+                    ])
+                    ->post('https://openrouter.ai/api/v1/chat/completions', [
+                        'model' => config('services.openrouter.model', 'nvidia/nemotron-3.5-lightning:free'),
+                        'messages' => [
+                            ['role' => 'system', 'content' => $system],
+                            ['role' => 'user', 'content' => "Shopping query: {$query}"],
+                        ],
+                        'temperature' => 0,
+                        'response_format' => ['type' => 'json_object'],
+                    ]);
+            } elseif ($provider === 'openai') {
                 $response = Http::timeout(20)
                     ->withToken(config('services.openai.key'))
                     ->post('https://api.openai.com/v1/chat/completions', [
@@ -169,7 +193,8 @@ PROMPT;
             }
 
             $body = $response->json();
-            $text = $provider === 'openai'
+            // OpenRouter and OpenAI share the same response format
+            $text = in_array($provider, ['openrouter', 'openai'])
                 ? ($body['choices'][0]['message']['content'] ?? '')
                 : ($body['candidates'][0]['content']['parts'][0]['text'] ?? '');
 
@@ -180,7 +205,7 @@ PROMPT;
                 'snippet' => (string) ($json['snippet'] ?? ''),
             ];
         } catch (\Throwable $e) {
-            Log::debug('LLM check failed: '.$e->getMessage());
+            Log::debug('LLM check failed ('.$provider.'): '.$e->getMessage());
             return ['mentioned' => false, 'cited' => false, 'snippet' => ''];
         }
     }
@@ -203,11 +228,11 @@ PROMPT;
         $brand = $store->brand_name ?: ucfirst(strtok($store->shop, '.'));
         $seeds = [
             ["query" => "best {$brand} products review", 'category' => 'brand'],
-            ["query" => "best skincare brands in India for oily skin", 'category' => 'category'],
             ["query" => "{$brand} price in India", 'category' => 'brand'],
             ["query" => "is {$brand} good quality", 'category' => 'brand'],
-            ["query" => "top D2C beauty brands India 2026", 'category' => 'category'],
             ["query" => "buy {$brand} online India", 'category' => 'brand'],
+            ["query" => "top D2C brands India 2026", 'category' => 'category'],
+            ["query" => "{$brand} vs competitors India", 'category' => 'comparison'],
         ];
         $created = collect();
         foreach ($seeds as $seed) {

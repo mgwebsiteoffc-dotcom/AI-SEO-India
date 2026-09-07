@@ -17,6 +17,9 @@ class BillingService
     /**
      * Create a recurring app subscription; returns confirmation URL.
      * $interval: 'monthly' (EVERY_30_DAYS) or 'annual' (EVERY_12_MONTHS).
+     *
+     * For custom distribution stores (is_custom=true), billing is managed by admin
+     * — no Shopify billing API call needed. Admin sets plan directly.
      */
     public function subscribe(Store $store, string $plan, string $interval = 'monthly'): array
     {
@@ -25,7 +28,17 @@ class BillingService
             return ['ok' => false, 'error' => 'Unknown plan'];
         }
 
-        // Demo store without Shopify credentials → simulate the charge so the UI flow can be previewed
+        // Custom distribution stores — admin-managed billing, no Shopify API needed
+        if ($store->is_custom || empty($store->shopify_token)) {
+            $this->activate($store, $plan, $interval);
+            return [
+                'ok' => true,
+                'admin_managed' => true,
+                'message' => "Plan upgraded to {$planDef['name']}. Billing is managed by the app administrator.",
+            ];
+        }
+
+        // Demo store without Shopify credentials → simulate the charge
         if ($store->is_demo && ! ShopifyService::init()) {
             $url = '/billing/callback?plan='.$plan.'&interval='.$interval.'&shop='.$store->shop.'&charge_id=demo-charge';
             return [
@@ -33,7 +46,7 @@ class BillingService
                 'demo' => true,
                 'confirmationUrl' => $url,
                 'confirmation_url' => $url,
-                'message' => 'Demo mode: Shopify billing skipped (no API credentials configured).',
+                'message' => 'Demo mode: Shopify billing skipped.',
             ];
         }
 
