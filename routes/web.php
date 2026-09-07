@@ -92,6 +92,10 @@ Route::prefix('apps/ai-visibility')->middleware(VerifyProxyRequest::class)->grou
 // Analytics report (public for PDF export)
 Route::get('/analytics/report', [ApiController::class, 'analyticsReport'])->name('analytics.report');
 
+// IndexNow submit (public for external tools/automation)
+Route::post('/api/indexnow/submit', [ApiController::class, 'indexNowSubmit']);
+Route::post('/api/indexnow/submit-url', [ApiController::class, 'indexNowSubmitUrl']);
+
 // Embedded app JSON API (JWT-session protected)
 Route::prefix('api')->middleware(VerifyShopifySession::class)->group(function () {
     Route::get('/dashboard', [ApiController::class, 'dashboard']);
@@ -121,8 +125,7 @@ Route::prefix('api')->middleware(VerifyShopifySession::class)->group(function ()
     Route::post('/content/{id}/publish', [ContentController::class, 'publish']);
     Route::delete('/content/{id}', [ContentController::class, 'destroy']);
     Route::get('/content/sentiment', [ContentController::class, 'sentiment']);
-    Route::post('/indexnow/submit', [ApiController::class, 'indexNowSubmit']);
-    Route::post('/indexnow/submit-url', [ApiController::class, 'indexNowSubmitUrl']);
+    // IndexNow routes are public (defined above)
     Route::get('/brand-signals', [ApiController::class, 'brandSignals']);
     Route::get('/speed-analysis', [ApiController::class, 'speedAnalysis']);
     Route::post('/product-optimizer/optimize', [ApiController::class, 'optimizeProduct']);

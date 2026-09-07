@@ -42,16 +42,16 @@ class ProxyController extends Controller
                 ?? Store::where('shop', 'like', '%' . $host . '%')->first();
         }
 
-        // Last fallback: first non-demo store
+        // Last fallback: first non-demo store (works for custom stores too)
         if (!$store) {
-            $store = Store::where('is_demo', false)->whereNotNull('shopify_token')->first();
+            $store = Store::where('is_demo', false)->first();
         }
 
         if (!$store) {
             return response('Not found', 404);
         }
 
-        $content = app(LlmsGenerator::class)->generate($store);
+        $content = app(LlmsGenerator::class)->generate($store, persist: true);
         return response($content, 200, [
             'Content-Type' => 'text/plain; charset=utf-8',
             'Cache-Control' => 'public, max-age=3600',
@@ -66,7 +66,7 @@ class ProxyController extends Controller
         if (! $store) {
             return response('Not found', 404);
         }
-        $content = app(LlmsGenerator::class)->generate($store);
+        $content = app(LlmsGenerator::class)->generate($store, persist: true);
         return response($content, 200, [
             'Content-Type' => 'text/plain; charset=utf-8',
             'Cache-Control' => 'public, max-age=3600',

@@ -349,20 +349,47 @@ class ApiController extends Controller
         return response()->json(app(BillingService::class)->cancel($store));
     }
 
-    // --------------------------------------------------------- IndexNow
+    // --------------------------------------------------------- IndexNow (public, no JWT required)
 
-    /** POST /api/indexnow/submit — submit all store pages to IndexNow */
+    /**
+     * Resolve store from request — tries JWT session first, then ?shop= param.
+     * Works for both embedded app and public/external access.
+     */
+    private function resolveStore(Request $request): ?Store
+    {
+        // Try JWT session first
+        $store = $this->store($request);
+        if ($store) return $store;
+
+        // Try ?shop= query param
+        $shop = strtolower(trim((string) $request->query('shop', '')));
+        if ($shop) {
+            $store = Store::where('shop', $shop)->first();
+            if ($store) return $store;
+        }
+
+        // Try any non-demo store
+        return Store::where('is_demo', false)->first();
+    }
+
+    /** POST /api/indexnow/submit — public, no JWT required */
     public function indexNowSubmit(Request $request)
     {
-        $store = $this->store($request);
+        $store = $this->resolveStore($request);
+        if (!$store) {
+            return response()->json(['ok' => false, 'error' => 'No store found. Pass ?shop=yourstore.myshopify.com'], 404);
+        }
         $result = app(\App\Services\IndexNowService::class)->submitAll($store);
         return response()->json($result);
     }
 
-    /** POST /api/indexnow/submit-url — submit a single URL to IndexNow */
+    /** POST /api/indexnow/submit-url — public, no JWT required */
     public function indexNowSubmitUrl(Request $request)
     {
-        $store = $this->store($request);
+        $store = $this->resolveStore($request);
+        if (!$store) {
+            return response()->json(['ok' => false, 'error' => 'No store found'], 404);
+        }
         $url = (string) $request->input('url');
         if (empty($url)) {
             return response()->json(['error' => 'URL required'], 422);
