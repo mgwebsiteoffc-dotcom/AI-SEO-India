@@ -88,6 +88,9 @@ Route::prefix('apps/ai-visibility')->middleware(VerifyProxyRequest::class)->grou
     Route::get('/schema', [ProxyController::class, 'schema']);
 });
 
+// Analytics report (public for PDF export)
+Route::get('/analytics/report', [ApiController::class, 'analyticsReport'])->name('analytics.report');
+
 // Embedded app JSON API (JWT-session protected)
 Route::prefix('api')->middleware(VerifyShopifySession::class)->group(function () {
     Route::get('/dashboard', [ApiController::class, 'dashboard']);

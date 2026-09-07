@@ -7,6 +7,28 @@
       </p>
     </div>
 
+    <!-- Schedule a post -->
+    <div class="stat-card">
+      <div class="text-sm font-bold text-slate-900 mb-3">Schedule a post</div>
+      <div v-if="!availablePosts.length" class="text-sm text-slate-500 py-3">
+        No posts available to schedule. Generate content in Smart Blogger first.
+      </div>
+      <div v-else class="space-y-3">
+        <select v-model="selectedPost" class="input text-sm">
+          <option value="">Select a post to schedule…</option>
+          <option v-for="post in availablePosts" :key="post.id" :value="post.id">
+            {{ post.title }} ({{ post.status }})
+          </option>
+        </select>
+        <div class="flex gap-2">
+          <input v-model="scheduleDate" type="datetime-local" class="input flex-1 text-sm" />
+          <button @click="schedulePost" :disabled="!selectedPost || !scheduleDate" class="btn-primary text-xs">
+            Schedule
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Scheduled posts -->
     <div class="stat-card">
       <div class="flex items-center justify-between mb-4">
@@ -15,7 +37,7 @@
       </div>
 
       <div v-if="!calendar.length" class="text-sm text-slate-500 py-3">
-        No scheduled posts. Generate content in Smart Blogger, then schedule it here.
+        No scheduled posts. Schedule a post above or generate content in Smart Blogger.
       </div>
 
       <div class="space-y-3">
@@ -82,6 +104,9 @@ import { api } from '../api';
 const calendar = ref([]);
 const ideas = ref([]);
 const generatingIdeas = ref(false);
+const availablePosts = ref([]);
+const selectedPost = ref('');
+const scheduleDate = ref('');
 
 function formatDate(dateStr) {
     if (!dateStr) return '—';
@@ -100,6 +125,31 @@ async function loadCalendar() {
         calendar.value = result.posts || [];
     } catch (e) {
         console.error(e);
+    }
+}
+
+async function loadAvailablePosts() {
+    try {
+        const result = await api.get('/api/content');
+        availablePosts.value = (result.posts || []).filter(p => p.status !== 'published' && p.status !== 'scheduled');
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function schedulePost() {
+    if (!selectedPost.value || !scheduleDate.value) return;
+    try {
+        await api.post(`/api/content/${selectedPost.value}/schedule`, {
+            scheduled_at: scheduleDate.value,
+        });
+        selectedPost.value = '';
+        scheduleDate.value = '';
+        await loadCalendar();
+        await loadAvailablePosts();
+        alert('Post scheduled!');
+    } catch (e) {
+        alert(e.message);
     }
 }
 
@@ -139,5 +189,8 @@ async function createFromIdea(idea) {
     }
 }
 
-onMounted(loadCalendar);
+onMounted(() => {
+    loadCalendar();
+    loadAvailablePosts();
+});
 </script>

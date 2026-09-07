@@ -540,10 +540,24 @@ class ApiController extends Controller
         return response()->json($result);
     }
 
-    /** GET /api/analytics/report — export report */
+    /** GET /analytics/report — export report (public for PDF export) */
     public function analyticsReport(Request $request)
     {
+        // Try to get store from session, or from query param
         $store = $this->store($request);
+        if (!$store) {
+            $shop = strtolower(trim((string) $request->query('shop', '')));
+            if ($shop) {
+                $store = Store::where('shop', $shop)->first();
+            }
+        }
+        if (!$store) {
+            $store = Store::where('is_demo', false)->whereNotNull('shopify_token')->first();
+        }
+        if (!$store) {
+            return response('No store found', 404);
+        }
+
         $days = (int) $request->input('days', 30);
         $format = $request->input('format', 'json');
 

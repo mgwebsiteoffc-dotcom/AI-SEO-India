@@ -476,7 +476,7 @@ class SmartBlogger
         try {
             $client = ShopifyService::client($store);
             $res = $client->query([
-                'query' => '{ products(first: '.$limit.') { edges { node { title handle description(truncateAt: 140) } } } }',
+                'query' => '{ products(first: '.$limit.') { edges { node { title handle description(truncateAt: 140) priceRange { minVariantPrice { amount } } availableForSale } } } }',
             ]);
             $body = $res->getDecodedBody();
             if (! empty($body['errors'])) {
@@ -488,6 +488,8 @@ class SmartBlogger
                     'handle' => $e['node']['handle'],
                     'path' => '/products/'.$e['node']['handle'],
                     'description' => $e['node']['description'] ?? '',
+                    'price' => (float) ($e['node']['priceRange']['minVariantPrice']['amount'] ?? 0),
+                    'available' => $e['node']['availableForSale'] ?? true,
                 ];
             }
         } catch (\Throwable $e) {
@@ -495,7 +497,14 @@ class SmartBlogger
         }
         if (empty($products)) {
             foreach ($store->llmsEntries()->where('kind', 'product')->take($limit)->get() as $e) {
-                $products[] = ['title' => $e->title, 'handle' => basename($e->path), 'path' => $e->path, 'description' => $e->description];
+                $products[] = [
+                    'title' => $e->title,
+                    'handle' => basename($e->path),
+                    'path' => $e->path,
+                    'description' => $e->description ?? '',
+                    'price' => 0,
+                    'available' => true,
+                ];
             }
         }
         return $products;
