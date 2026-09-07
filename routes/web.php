@@ -128,6 +128,8 @@ Route::prefix('api')->middleware(VerifyShopifySession::class)->group(function ()
     Route::post('/content/{id}/schedule', [ApiController::class, 'schedulePost']);
     Route::post('/content/{id}/unschedule', [ApiController::class, 'unschedulePost']);
     Route::get('/content/ideas', [ApiController::class, 'contentIdeas']);
+    Route::get('/analytics', [ApiController::class, 'analytics']);
+    Route::get('/analytics/report', [ApiController::class, 'analyticsReport']);
     Route::get('/settings', [ApiController::class, 'settings']);
     Route::post('/settings', [ApiController::class, 'saveSettings']);
     Route::post('/onboarding/complete', [ApiController::class, 'completeOnboarding']);

@@ -58,6 +58,7 @@
         <ProductOptimizer v-else-if="tab === 'optimizer'" />
         <ShoppingFeed v-else-if="tab === 'feed'" />
         <ContentCalendar v-else-if="tab === 'calendar'" />
+        <Analytics v-else-if="tab === 'analytics'" />
         <Billing v-else-if="tab === 'billing'" />
         <Settings v-else-if="tab === 'settings'" :initial="data" @saved="load" />
       </main>
@@ -82,6 +83,7 @@ import SpeedAnalysis from './components/SpeedAnalysis.vue';
 import ProductOptimizer from './components/ProductOptimizer.vue';
 import ShoppingFeed from './components/ShoppingFeed.vue';
 import ContentCalendar from './components/ContentCalendar.vue';
+import Analytics from './components/Analytics.vue';
 import Billing from './components/Billing.vue';
 import Settings from './components/Settings.vue';
 
@@ -114,6 +116,7 @@ const tabs = [
     { key: 'calendar', label: 'Content Calendar' },
     { key: 'optimizer', label: 'Product Optimizer' },
     { key: 'feed', label: 'AI Shopping Feed' },
+    { key: 'analytics', label: 'Analytics & Reports' },
     { key: 'traffic', label: 'AI Traffic & Orders' },
     { key: 'llms', label: 'llms.txt' },
     { key: 'schema', label: 'Schema Builder' },

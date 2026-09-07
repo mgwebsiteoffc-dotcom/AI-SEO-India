@@ -373,7 +373,7 @@ class ApiController extends Controller
 
     // --------------------------------------------------------- Brand Signals
 
-    /** GET /api/brand-signals — analyze brand signals (cached 24h) */
+    /** GET /api/brand-signals — analyze brand signals (cached 24h, stores snapshot) */
     public function brandSignals(Request $request)
     {
         $store = $this->store($request);
@@ -388,12 +388,20 @@ class ApiController extends Controller
         $result = app(\App\Services\BrandSignalsService::class)->analyze($store);
         \Illuminate\Support\Facades\Cache::put($cacheKey, $result, now()->addHours(24));
 
+        // Store snapshot for historical comparison
+        \App\Models\AnalysisSnapshot::store_snapshot(
+            $store->id,
+            'brand_signals',
+            $result,
+            $result['score'] ?? 0
+        );
+
         return response()->json($result);
     }
 
     // --------------------------------------------------------- Speed Analysis
 
-    /** GET /api/speed-analysis — run page speed analysis (cached 24h) */
+    /** GET /api/speed-analysis — run page speed analysis (cached 24h, stores snapshot) */
     public function speedAnalysis(Request $request)
     {
         $store = $this->store($request);
@@ -411,6 +419,14 @@ class ApiController extends Controller
         // Only cache successful results
         if ($result['ok'] ?? false) {
             \Illuminate\Support\Facades\Cache::put($cacheKey, $result, now()->addHours(24));
+
+            // Store snapshot for historical comparison
+            \App\Models\AnalysisSnapshot::store_snapshot(
+                $store->id,
+                'speed_analysis',
+                $result,
+                $result['scores']['performance'] ?? 0
+            );
         }
 
         return response()->json($result);
@@ -511,6 +527,33 @@ class ApiController extends Controller
         $days = (int) $request->input('days', 30);
         $result = app(\App\Services\ContentCalendarService::class)->getCalendar($store, $days);
         return response()->json($result);
+    }
+
+    // --------------------------------------------------------- Analytics
+
+    /** GET /api/analytics — comprehensive analytics dashboard */
+    public function analytics(Request $request)
+    {
+        $store = $this->store($request);
+        $days = (int) $request->input('days', 30);
+        $result = app(\App\Services\AnalyticsService::class)->dashboard($store, $days);
+        return response()->json($result);
+    }
+
+    /** GET /api/analytics/report — export report */
+    public function analyticsReport(Request $request)
+    {
+        $store = $this->store($request);
+        $days = (int) $request->input('days', 30);
+        $format = $request->input('format', 'json');
+
+        $report = app(\App\Services\AnalyticsService::class)->generateReport($store, $days);
+
+        if ($format === 'html') {
+            return view('analytics.report', ['report' => $report]);
+        }
+
+        return response()->json($report);
     }
 
     /** POST /api/content/{id}/schedule — schedule a post */
