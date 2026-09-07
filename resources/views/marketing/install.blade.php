@@ -36,6 +36,19 @@
                         <button class="btn-primary !bg-brand-500 hover:!bg-brand-400 whitespace-nowrap">Install app →</button>
                     </form>
                     <p class="text-[11px] text-slate-500 mt-4">After approving, you land back in your store admin with AI Visibility installed.</p>
+
+                    <div class="mt-5 pt-5 border-t border-white/10">
+                        <div class="text-xs font-semibold text-slate-300 mb-2">Using a custom distribution app?</div>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">
+                            Install from <b>Shopify admin → Settings → Apps and sales channels → Develop apps → Install custom app</b>.
+                            The app will redirect here automatically after OAuth.
+                        </p>
+                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                            Make sure in your <b>Shopify Partner Dashboard → App setup</b>:<br>
+                            • <b>App URL</b> = <code class="bg-slate-800 px-1 rounded text-brand-300">https://aivisibility.akestech.in.net/auth/install</code><br>
+                            • <b>Allowed redirection URL(s)</b> = <code class="bg-slate-800 px-1 rounded text-brand-300">https://aivisibility.akestech.in.net/auth/callback</code>
+                        </p>
+                    </div>
                 </div>
             @else
                 {{-- No credentials → demo install + guidance (this sandbox state) --}}

@@ -10,12 +10,13 @@ class Store extends Model
     protected $fillable = [
         'shop', 'shopify_token', 'scopes', 'plan', 'billing_id', 'billing_status',
         'trial_ends_at', 'billing_ends_at', 'domain', 'brand_name', 'currency',
-        'country', 'is_demo', 'settings',
+        'country', 'is_demo', 'onboarding_completed', 'settings',
     ];
 
     protected $casts = [
         'settings' => 'array',
         'is_demo' => 'boolean',
+        'onboarding_completed' => 'boolean',
         'trial_ends_at' => 'datetime',
         'billing_ends_at' => 'datetime',
     ];
@@ -29,10 +30,16 @@ class Store extends Model
     public function competitorMentions(): HasMany { return $this->hasMany(CompetitorMention::class); }
     public function attributedOrders(): HasMany { return $this->hasMany(AttributedOrder::class); }
     public function contentPosts(): HasMany { return $this->hasMany(ContentPost::class); }
+    public function analysisSnapshots(): HasMany { return $this->hasMany(\App\Models\AnalysisSnapshot::class); }
+    public function aiTrafficLogs(): HasMany { return $this->hasMany(\App\Models\AiTrafficLog::class); }
 
     public function hostname(): string
     {
-        return $this->domain ?? $this->shop;
+        $host = $this->domain ?? $this->shop;
+        // Strip protocol if user entered full URL (e.g. "https://midorii.in")
+        $host = preg_replace('#^https?://#', '', (string) $host);
+        $host = rtrim($host, '/');
+        return $host;
     }
 
     public function queryLimit(): int

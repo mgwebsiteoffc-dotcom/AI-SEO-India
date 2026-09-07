@@ -37,8 +37,8 @@
             <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4 items-stretch">
                 @foreach ([
                     ['free', 'Free', '₹0', '0', ['AI Readiness Score', '25 tracked queries / month', '1 store', 'AI SEO guides', 'Community support'], false, false],
-                    ['grow', 'Grow', '₹999', '9999', ['Everything in Free', '150 tracked queries / month', 'llms.txt + robots.txt automation', 'Schema Builder', 'AI Traffic Attribution', 'Standard WhatsApp support'], true, false],
-                    ['scale', 'Scale', '₹1,999', '19999', ['Everything in Grow', '500 tracked queries / month', 'Smart Blogger + publish to blog', 'AI Sentiment Analysis', 'Competitor tracking (2)', 'Priority WhatsApp support'], false, true],
+                    ['grow', 'Grow', '₹999', '9999', ['Everything in Free', '150 tracked queries / month', 'llms.txt + robots.txt automation', 'Schema Builder', 'AI Traffic Attribution', 'Instant Indexing (IndexNow)', 'Brand Signals Analysis', 'Speed Analysis', 'Standard WhatsApp support'], true, false],
+                    ['scale', 'Scale', '₹1,999', '19999', ['Everything in Grow', '500 tracked queries / month', 'Smart Blogger + publish to blog', 'Product Optimizer', 'AI Shopping Feed', 'Content Calendar', 'AI Sentiment Analysis', 'Competitor tracking (2)', 'Priority WhatsApp support'], false, true],
                     ['agency', 'Agency', '₹4,999', '49999', ['Everything in Scale', '2,000 tracked queries / month', 'Multi-store dashboard', 'Competitor tracking (10)', 'White-label client reports', 'Dedicated manager'], false, false],
                 ] as [$key, $name, $price, $annual, $features, $popular, $best])
                 <div class="relative flex flex-col rounded-3xl border p-7 transition-all duration-300
@@ -100,6 +100,12 @@
                             ['llms.txt + robots.txt automation', '—', '✓', '✓', '✓'],
                             ['Schema Builder (JSON-LD)', '—', '✓', '✓', '✓'],
                             ['AI Traffic → Orders attribution', '—', '✓', '✓', '✓'],
+                            ['Instant Indexing (IndexNow)', '—', '✓', '✓', '✓'],
+                            ['Brand Signals Analysis', '—', '✓', '✓', '✓'],
+                            ['Speed Analysis (Core Web Vitals)', '—', '✓', '✓', '✓'],
+                            ['Product Optimizer', '—', '—', '✓', '✓'],
+                            ['AI Shopping Feed', '—', '—', '✓', '✓'],
+                            ['Content Calendar + auto-publish', '—', '—', '✓', '✓'],
                             ['Smart Blogger + publish to blog', '—', '—', '✓', '✓'],
                             ['AI Sentiment Analysis', '—', '—', '✓', '✓'],
                             ['Competitor tracking', '—', '—', '2 brands', '10 brands'],
