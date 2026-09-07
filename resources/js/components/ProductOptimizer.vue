@@ -15,7 +15,10 @@
         </button>
       </div>
       <div v-if="bulkResult" class="text-xs rounded-xl p-3" :class="bulkResult.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">
-        {{ bulkResult.ok ? `✓ Optimized ${bulkResult.optimized}/${bulkResult.total} products` : `Error: ${bulkResult.error}` }}
+        <div>{{ bulkResult.ok ? `✓ Optimized ${bulkResult.optimized}/${bulkResult.total} products` : `Error: ${bulkResult.error}` }}</div>
+        <div v-if="!bulkResult.ok" class="mt-2 text-red-600">
+          Tip: Go to the llms.txt tab → click "Generate" to create product entries first.
+        </div>
       </div>
     </div>
 
@@ -61,7 +64,8 @@ async function optimizeAll() {
     optimizing.value = true;
     bulkResult.value = null;
     try {
-        bulkResult.value = await api.post('/api/product-optimizer/optimize-all');
+        const result = await api.post('/api/product-optimizer/optimize-all');
+        bulkResult.value = result;
     } catch (e) {
         bulkResult.value = { ok: false, error: e.message };
     } finally {

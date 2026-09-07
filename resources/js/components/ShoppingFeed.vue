@@ -16,6 +16,12 @@
         </button>
       </div>
 
+      <div v-if="error" class="rounded-xl bg-red-50 border border-red-200 p-4 text-xs text-red-700 mt-3">
+        <div class="font-bold mb-1">Could not generate feed</div>
+        <div>{{ error }}</div>
+        <div class="mt-2 text-red-600">Tip: Go to the llms.txt tab → click "Generate" to create product entries, then try again.</div>
+      </div>
+
       <div v-if="feed" class="space-y-4">
         <div class="grid sm:grid-cols-3 gap-3">
           <div class="rounded-xl border border-slate-200 p-3 text-center">
@@ -86,14 +92,21 @@ const feedPreview = computed(() => {
     return JSON.stringify(preview, null, 2);
 });
 
+const error = ref('');
+
 async function generateFeed() {
     generating.value = true;
     feed.value = null;
+    error.value = '';
     try {
         const result = await api.get('/api/shopping-feed');
-        feed.value = result.feed;
+        if (result.ok) {
+            feed.value = result.feed;
+        } else {
+            error.value = result.error || 'Failed to generate feed';
+        }
     } catch (e) {
-        alert(e.message);
+        error.value = e.message;
     } finally {
         generating.value = false;
     }

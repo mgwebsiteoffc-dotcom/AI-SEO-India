@@ -25,14 +25,30 @@ class SpeedAnalysisService
         $url = "https://{$domain}{$path}";
 
         try {
-            $res = Http::timeout(30)->get(self::PSI_ENDPOINT, [
+            $params = [
                 'url' => $url,
                 'strategy' => 'mobile',
-                'category' => 'performance',
-                'category' => 'accessibility',
-                'category' => 'best-practices',
-                'category' => 'seo',
-            ]);
+                'category' => ['performance', 'accessibility', 'best-practices', 'seo'],
+            ];
+
+            // Use API key if available (higher rate limits)
+            $apiKey = config('services.pagespeed.key') ?: env('PAGESPEED_API_KEY');
+            if ($apiKey) {
+                $params['key'] = $apiKey;
+            }
+
+            $res = Http::timeout(45)->get(self::PSI_ENDPOINT, $params);
+
+            if ($res->status() === 429) {
+                // Rate limited — return a helpful message instead of an error
+                return [
+                    'ok' => false,
+                    'error' => 'rate_limit',
+                    'error_message' => 'Google PageSpeed API rate limit reached. This is normal for high-traffic apps.',
+                    'tip' => 'Add a free Google PageSpeed API key in .env (PAGESPEED_API_KEY=your_key) for higher limits. Get one at https://developers.google.com/speed/docs/insights/v5/get-started',
+                    'url' => $url,
+                ];
+            }
 
             if (!$res->successful()) {
                 return [

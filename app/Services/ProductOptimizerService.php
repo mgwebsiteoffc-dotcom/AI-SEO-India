@@ -152,6 +152,17 @@ MD;
     public function optimizeAll(Store $store, int $limit = 10): array
     {
         $catalog = app(SmartBlogger::class)->catalogProducts($store, $limit);
+
+        if (empty($catalog)) {
+            return [
+                'ok' => false,
+                'error' => 'No products found. The app needs read_products scope to access your products. Please reinstall the app from Shopify admin, or generate llms.txt first (go to llms.txt tab → Generate).',
+                'total' => 0,
+                'optimized' => 0,
+                'results' => [],
+            ];
+        }
+
         $results = [];
 
         foreach ($catalog as $product) {

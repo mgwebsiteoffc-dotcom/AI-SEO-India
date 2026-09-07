@@ -30,6 +30,8 @@ class Store extends Model
     public function competitorMentions(): HasMany { return $this->hasMany(CompetitorMention::class); }
     public function attributedOrders(): HasMany { return $this->hasMany(AttributedOrder::class); }
     public function contentPosts(): HasMany { return $this->hasMany(ContentPost::class); }
+    public function analysisSnapshots(): HasMany { return $this->hasMany(\App\Models\AnalysisSnapshot::class); }
+    public function aiTrafficLogs(): HasMany { return $this->hasMany(\App\Models\AiTrafficLog::class); }
 
     public function hostname(): string
     {

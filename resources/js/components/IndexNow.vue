@@ -15,8 +15,12 @@
           {{ submitting ? 'Submitting…' : 'Submit all pages to IndexNow' }}
         </button>
       </div>
-      <div v-if="result" class="text-xs rounded-xl p-3" :class="result.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">
-        {{ result.ok ? `✓ Submitted ${result.submitted} pages to IndexNow` : `Error: ${result.error}` }}
+      <div v-if="result" class="text-xs rounded-xl p-3" :class="result.ok && result.submitted > 0 ? 'bg-emerald-50 text-emerald-700' : result.ok && result.submitted === 0 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'">
+        <div v-if="result.ok && result.submitted > 0">✓ Submitted {{ result.submitted }} pages to IndexNow</div>
+        <div v-else-if="result.ok && result.submitted === 0">
+          No pages found to submit. Go to the llms.txt tab → click "Generate" first, then try again.
+        </div>
+        <div v-else>Error: {{ result.error }}</div>
       </div>
     </div>
 

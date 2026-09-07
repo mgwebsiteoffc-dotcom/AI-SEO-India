@@ -27,9 +27,24 @@
 
     <template v-else-if="result">
       <div v-if="!result.ok" class="stat-card text-center py-8">
-        <div class="text-sm text-red-600 mb-2">{{ result.error }}</div>
-        <div v-if="result.error?.includes('429')" class="text-xs text-slate-500">
-          Google PageSpeed API rate limit reached. Results are cached — try again in a few minutes or click "Refresh" to force a new analysis.
+        <div class="text-sm text-red-600 mb-2">{{ result.error_message || result.error }}</div>
+        <div v-if="result.error === 'rate_limit'" class="text-xs text-slate-500 max-w-md mx-auto">
+          <div class="mb-2">Google PageSpeed API has a free usage limit. This is normal — results are cached for 24 hours.</div>
+          <div class="mb-3">To get unlimited analyses, add a free PageSpeed API key:</div>
+          <div class="bg-slate-100 rounded-lg p-3 text-left font-mono text-[11px]">
+            1. Go to <a href="https://console.cloud.google.com" target="_blank" class="text-brand-600 underline">console.cloud.google.com</a><br>
+            2. Enable "PageSpeed Insights API"<br>
+            3. Create an API key<br>
+            4. Add to .env: PAGESPEED_API_KEY=your_key
+          </div>
+          <div class="mt-3">
+            <button @click="refresh" :disabled="loading" class="btn-secondary text-xs">
+              {{ loading ? 'Trying…' : 'Try again (cached results)' }}
+            </button>
+          </div>
+        </div>
+        <div v-else class="text-xs text-slate-500 mt-2">
+          {{ result.tip || '' }}
         </div>
       </div>
 

@@ -28,7 +28,7 @@ class ShoppingFeedService
         if (empty($products)) {
             return [
                 'ok' => false,
-                'error' => 'No products found. Make sure the app has read_products scope.',
+                'error' => 'No products found. The app needs read_products scope. Please reinstall the app from Shopify admin to grant this permission, or go to the llms.txt tab and click "Generate" first.',
             ];
         }
 
@@ -112,6 +112,7 @@ class ShoppingFeedService
 
     /**
      * Fetch products from Shopify GraphQL API.
+     * Falls back to llms entries if Shopify API fails.
      */
     private function fetchProducts(Store $store): array
     {
@@ -149,7 +150,7 @@ class ShoppingFeedService
             $body = $res->getDecodedBody();
             if (!empty($body['errors'])) {
                 Log::warning('Shopping feed product fetch errors', ['errors' => $body['errors']]);
-                return [];
+                return $this->fallbackFromLlms($store);
             }
 
             $products = [];
@@ -172,10 +173,60 @@ class ShoppingFeedService
                 ];
             }
 
+            // If Shopify returned no products, try llms entries
+            if (empty($products)) {
+                return $this->fallbackFromLlms($store);
+            }
+
             return $products;
         } catch (\Throwable $e) {
             Log::warning('Shopping feed fetch failed: ' . $e->getMessage());
-            return [];
+            return $this->fallbackFromLlms($store);
         }
+    }
+
+    /**
+     * Fallback: build product list from llms entries.
+     */
+    private function fallbackFromLlms(Store $store): array
+    {
+        $products = [];
+        foreach ($store->llmsEntries()->where('kind', 'product')->take(50)->get() as $entry) {
+            $products[] = [
+                'id' => $entry->id,
+                'title' => $entry->title,
+                'handle' => basename($entry->path),
+                'description' => $entry->description ?? '',
+                'price' => 0,
+                'available' => true,
+                'image' => null,
+                'type' => null,
+                'tags' => [],
+            ];
+        }
+
+        // If still empty, generate llms entries first
+        if (empty($products)) {
+            try {
+                app(\App\Services\LlmsGenerator::class)->generate($store, persist: true);
+                foreach ($store->llmsEntries()->where('kind', 'product')->take(50)->get() as $entry) {
+                    $products[] = [
+                        'id' => $entry->id,
+                        'title' => $entry->title,
+                        'handle' => basename($entry->path),
+                        'description' => $entry->description ?? '',
+                        'price' => 0,
+                        'available' => true,
+                        'image' => null,
+                        'type' => null,
+                        'tags' => [],
+                    ];
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Llms fallback failed: ' . $e->getMessage());
+            }
+        }
+
+        return $products;
     }
 }
